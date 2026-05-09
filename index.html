@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>앗싸! 신나는 스마트폰 명랑 운동회</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #0f172a; color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+        
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 250px; max-height: 40vh; }
+        @media (min-width: 640px) { .chart-container { height: 300px; } }
+        
+        /* 꽉 차는 미션 카드 스타일 */
+        .mission-card { transition: all 0.2s ease-in-out; border: 3px solid #334155; min-height: 300px; background-color: #1e293b; color: #f1f5f9; }
+        .mission-card.completed { background-color: #064e3b; border-color: #10b981; }
+        
+        .checkbox-custom { display: inline-flex; align-items: center; justify-content: center; width: 4rem; height: 4rem; border-radius: 9999px; border: 4px solid #475569; font-size: 2rem; font-weight: bold; color: transparent; transition: all 0.2s; flex-shrink: 0; margin-top: 1rem; }
+        .mission-card.completed .checkbox-custom { background-color: #10b981; border-color: #10b981; color: white; }
+        
+        .view-section { display: none; }
+        .view-section.active { display: block; animation: fadeIn 0.4s; }
+        #view-missions.active { display: flex !important; flex-direction: column; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .loader { border: 4px solid #1e293b; border-top: 4px solid #3B82F6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 모달 스타일 */
+        #custom-modal.show { display: flex; animation: fadeIn 0.2s; }
+        #custom-modal .bg-white { background-color: #1e293b; color: #f1f5f9; }
+        #custom-modal .text-gray-800 { color: #f1f5f9; }
+        #custom-modal .text-gray-600 { color: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+
+    <!-- 커스텀 팝업 (모달) UI -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl transform transition-all">
+            <h3 id="modal-title" class="text-xl font-bold text-gray-800 mb-2">알림</h3>
+            <p id="modal-message" class="text-gray-600 mb-6 break-keep leading-relaxed"></p>
+            <div class="flex justify-end gap-2" id="modal-buttons">
+                <button id="modal-btn-cancel" class="hidden px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">취소</button>
+                <button id="modal-btn-confirm" class="px-4 py-2 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50 border-b border-slate-800">
+        <div class="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-4 flex justify-between items-center">
+            <!-- 좌측 영역: 로고 + 기관명 (위) & 타이틀 (아래) -->
+            <div class="flex flex-col gap-1 sm:gap-2 flex-1 min-w-0">
+                <!-- 로고와 기관명 -->
+                <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+                    <img src="Logo_of_Seoul.jpg" alt="서울로고" class="h-6 sm:h-9 md:h-11 object-contain rounded-lg">
+                    <div class="text-sm sm:text-xl md:text-2xl font-black tracking-tighter whitespace-nowrap text-slate-400">성동노인종합복지관</div>
+                </div>
+                
+                <!-- 타이틀 (줄 바꿈) -->
+                <h1 class="text-sm sm:text-xl md:text-2xl font-black tracking-tight truncate text-orange-500">🎉 스마트폰 명랑 운동회</h1>
+            </div>
+            
+            <!-- 우측 제어 영역 -->
+            <div class="flex items-center justify-end gap-1.5 sm:gap-3 shrink-0">
+                <div id="header-user-info" class="hidden text-sm sm:text-lg md:text-xl font-bold text-slate-300 whitespace-nowrap"><span id="display-name">어르신</span></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        
+        <!-- 선생님 대시보드 (학생 목록) -->
+        <section id="view-teacher" class="view-section active">
+            <div class="mb-6 sm:mb-8 bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700">
+                <h2 class="text-xl sm:text-2xl font-bold text-orange-500 mb-2">👨‍🏫 선생님 대시보드</h2>
+                <p class="text-base sm:text-lg text-slate-400 leading-relaxed">팀과 성함을 선택하시면 한 달 이내의 학생 명단을 불러옵니다. 선택 상태는 자동으로 기억됩니다.</p>
+            </div>
+
+            <div class="mb-6 sm:mb-8 bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700">
+                <div class="flex flex-col mb-4 gap-2">
+                    <h3 class="text-lg sm:text-xl font-bold text-slate-100">📋 학생 이름 불러오기 (최근 한 달)</h3>
+                </div>
+                
+                <div class="flex flex-col gap-3 w-full">
+                    <!-- 팀과 선생님 이름이 모바일에서 한 줄에 꽉 차게 배치 -->
+                    <div class="flex flex-row gap-2 w-full">
+                        <select id="sync-team-select" class="h-12 px-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-base font-bold text-slate-100 bg-slate-700 w-28 shrink-0">
+                            <option value="1팀">1팀</option>
+                            <option value="2팀">2팀</option>
+                            <option value="3팀">3팀</option>
+                        </select>
+                        <select id="sync-teacher-select" class="h-12 px-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-base font-bold text-slate-100 bg-slate-700 flex-1">
+                            <option value="">선생님 선택</option>
+                        </select>
+                    </div>
+                    
+                    <button id="btn-fetch-sheets" class="h-12 bg-orange-600 hover:bg-orange-500 text-white px-4 rounded-xl font-bold transition-colors whitespace-nowrap w-full flex items-center justify-center gap-2 text-base shadow-lg">
+                        <span class="text-lg">🔄</span> 학생 이름 읽기
+                    </button>
+                </div>
+                
+                <div id="sheets-loading" class="hidden text-center py-6 text-orange-500 font-medium flex-col items-center">
+                    <div class="loader"></div>
+                    <span id="loading-message" class="text-sm">데이터를 분석 중입니다...</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-slate-100">담당 어르신 목록 📋</h3>
+            </div>
+            
+            <div id="loading-students" class="text-center py-8 text-slate-500 text-base font-medium">데이터를 불러오는 중...</div>
+            
+            <!-- 학생 목록 그리드 (한 줄에 2개 이상) -->
+            <div id="student-list-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <!-- 학생 목록 렌더링 영역 -->
+            </div>
+        </section>
+
+        <!-- 학생 대시보드 (현황판 및 과목 선택) -->
+        <section id="view-dashboard" class="view-section">
+            <div class="mb-6 sm:mb-8 bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700">
+                <h2 class="text-xl sm:text-2xl font-bold text-orange-500 mb-2">훈련 현황판 📊</h2>
+                <p class="text-base sm:text-lg text-slate-400 leading-relaxed">과목 버튼을 눌러 미션에 참여해 보세요.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-10">
+                <div class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center">
+                    <h3 class="text-lg sm:text-xl font-bold text-slate-300 mb-4">전체 훈련 달성률</h3>
+                    <div class="chart-container"><canvas id="totalProgressChart"></canvas></div>
+                    <div class="mt-4 text-2xl sm:text-3xl font-black text-orange-500" id="total-percentage-text">0%</div>
+                </div>
+                <div class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center w-full overflow-hidden">
+                    <h3 class="text-lg sm:text-xl font-bold text-slate-300 mb-4">과목별 달성 현황</h3>
+                    <div class="chart-container w-full"><canvas id="categoryProgressChart"></canvas></div>
+                </div>
+            </div>
+
+            <h3 class="text-xl sm:text-2xl font-bold text-slate-100 mb-4">도전! 과목 선택하기 👇</h3>
+            <!-- 핵심 수정 사항: 모바일에서 한 줄에 두 개(grid-cols-2) 표시 -->
+            <div id="category-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                <!-- 과목 카드 렌더링 -->
+            </div>
+        </section>
+
+        <!-- 키보드 게임 뷰 (손가락 놀이터) -->
+        <section id="view-keyboard-game" class="view-section flex-1">
+            <div class="mb-4 flex items-center justify-between bg-[#0f172a] py-2 z-40 border-b border-slate-800 sticky top-[60px] sm:top-[72px]">
+                <button onclick="app.goBack()" class="h-12 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold px-4 rounded-xl text-base sm:text-lg flex items-center gap-2 border border-slate-700 shadow-lg transition-colors">
+                    <span>◀</span> 목록으로
+                </button>
+                <div class="text-base sm:text-xl font-bold text-orange-500 bg-orange-900/30 px-3 sm:px-4 py-2 rounded-lg" id="game-progress-badge">0 / 45 완료</div>
+            </div>
+
+            <div class="w-full max-w-md mx-auto flex flex-col gap-4">
+                <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl">
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <h1 class="text-xl font-black text-orange-500">⌨️ 손가락 놀이터</h1>
+                            <p id="level-title" class="text-sm font-bold text-slate-400">1단계: 쉬운 한글</p>
+                        </div>
+                        <div class="text-right">
+                            <span id="current-step" class="text-2xl font-black text-slate-100">1</span>
+                            <span class="text-slate-500 font-bold">/ 45</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-700">
+                        <div id="game-progress-fill" class="progress-bar h-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" style="width: 2%"></div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 justify-center">
+                    <button onclick="app.jumpToLevel('초급')" class="flex-1 py-3 rounded-2xl font-bold bg-blue-900/30 text-blue-400 border border-blue-900/50 hover:bg-blue-900/50 transition-colors text-sm">초급</button>
+                    <button onclick="app.jumpToLevel('중급')" class="flex-1 py-3 rounded-2xl font-bold bg-green-900/30 text-green-400 border border-green-900/50 hover:bg-green-900/50 transition-colors text-sm">중급</button>
+                    <button onclick="app.jumpToLevel('고급')" class="flex-1 py-3 rounded-2xl font-bold bg-purple-900/30 text-purple-400 border border-purple-900/50 hover:bg-purple-900/50 transition-colors text-sm">고급</button>
+                </div>
+
+                <div id="game-card" class="bg-slate-800 rounded-3xl shadow-2xl p-8 text-center flex flex-col justify-center border-4 border-slate-700 transition-all min-h-[300px]">
+                    <div id="game-category-tag" class="inline-block mx-auto px-4 py-1 rounded-full text-xs font-bold mb-6 bg-orange-900/30 text-orange-400 border border-orange-900/50">
+                        초급 연습
+                    </div>
+                    
+                    <div id="game-target-word" class="text-5xl sm:text-6xl font-black text-slate-100 mb-8 break-keep tracking-tight">
+                        나비
+                    </div>
+
+                    <div class="relative mb-4">
+                        <input type="text" id="game-user-input" 
+                            class="w-full text-3xl text-center border-b-4 border-slate-700 focus:border-orange-500 outline-none py-3 font-bold text-orange-500 transition-colors bg-transparent"
+                            placeholder="똑같이 써보세요"
+                            autocomplete="off">
+                    </div>
+
+                    <div id="game-feedback-msg" class="h-6 text-sm font-bold text-slate-500">
+                        아래 키보드로 천천히 눌러보세요
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-10">
+                    <button onclick="app.prevGameStep()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold py-4 rounded-2xl shadow-lg border border-slate-600">이전 문제</button>
+                    <button onclick="app.resetGame()" class="bg-rose-900/20 hover:bg-rose-900/40 text-rose-400 font-bold py-4 rounded-2xl shadow-lg border border-rose-900/30">처음부터</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 미션 뷰 (한 문제씩 나오는 슬라이드 형태) -->
+        <section id="view-missions" class="view-section flex-1">
+            <div class="mb-4 sm:mb-6 flex items-center justify-between bg-[#0f172a] py-2 z-40 border-b border-slate-800 sticky top-[60px] sm:top-[72px]">
+                <button onclick="app.goBack()" class="h-12 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold px-4 rounded-xl text-base sm:text-lg flex items-center gap-2 border border-slate-700 shadow-lg transition-colors">
+                    <span>◀</span> 목록으로
+                </button>
+                <div class="text-base sm:text-xl font-bold text-orange-500 bg-orange-900/30 px-3 sm:px-4 py-2 rounded-lg" id="category-progress-badge">0 / 25 완료</div>
+            </div>
+
+            <h2 id="mission-category-title" class="text-2xl sm:text-3xl font-black text-slate-100 mb-6 text-center w-full px-2">과목 제목</h2>
+
+            <!-- 슬라이드 카드 컨테이너 -->
+            <div id="mission-list" class="flex flex-col items-center justify-center w-full max-w-2xl mx-auto flex-1 pb-10">
+                <!-- 자바스크립트로 문제 한 개씩 렌더링 -->
+            </div>
+        </section>
+
+    </main>
+
+    <script type="module">
+        // 10개 과목 총 257개 문제 완벽 복구 및 추가
+        const quizData = [
+            {
+                id: 0,
+                title: "제 1과목: 폰아, 내 말 좀 들어라!",
+                subtitle: "기기 기본 조작",
+                icon: "⚙️",
+                missions: [
+                    "며느리가 준 용돈 만 원짜리가 소파 밑에 굴러갔다! 얼른 화면을 위에서 쓸어내려 '손전등(플래시)'을 켜서 찾아보세요!",
+                    "손전등 끄는 거 잊으면 배터리 다 닳아요! 다시 눌러서 손전등을 꺼보세요.",
+                    "복지관에 왔으니 공짜 인터넷 써야죠! 부채꼴 모양 '와이파이'를 켜서 인터넷에 딱! 연결해 보세요.",
+                    "화면이 너무 어두워 내 예쁜 얼굴이 안 보이네! 해(전구) 모양 바를 오른쪽으로 쭉 밀어서 화면을 눈부시게 밝게 만들어보세요.",
+                    "돋보기를 두고 왔네! [설정]-[디스플레이]에 들어가서 '글자 크기'를 내 얼굴만큼 제일 크게 키워보세요.",
+                    "영화관에 왔습니다! 내 폰에서 트로트 울리면 큰일 나죠. 화면을 쓸어내려 소리를 '진동'이나 '무음'으로 샥~ 바꿔보세요.",
+                    "화면이 자꾸 5초 만에 까맣게 꺼져서 성질이 납니다! [설정]에서 '화면 자동 꺼짐 시간'을 넉넉하게 5분(또는 10분)으로 늘려보세요.",
+                    "유튜브 볼 때 화면이 옆으로 눕게 만들고 싶어요! 화면 위를 쓸어내려 자물쇠 모양의 '화면 회전(자동 회전)'을 켜보세요.",
+                    "손가락 체조 시간! 화면에 두 손가락을 대고 쫙 벌렸다가 다시 오므리는 '확대/축소' 동작을 바탕화면에서 해보세요.",
+                    "화면 위에 쓸데없는 알림(광고)이 너무 많이 쌓였어요. 위에서 아래로 쓸어내린 후 '모두 지우기(지우기)'를 눌러 청소해 보세요.",
+                    "하와이 가는 비행기 탑승! 승무원에게 혼나기 전에 비행기 모양 '비행기 탑승 모드'를 켰다가, 다시 꺼보세요.",
+                    "이것저것 누르다가 길을 잃었어요! 당황하지 말고 화면 맨 아래 가운데 동그라미 '홈 버튼(◯)'을 눌러 고향으로 돌아오세요.",
+                    "방금 전에 보던 화면으로 돌아가고 싶어요. 맨 아래 화살표 '뒤로 가기(◁)' 버튼을 연속으로 세 번 눌러보세요.",
+                    "무선 이어폰이나 자동차를 연결할 때 쓰는 알파벳 B모양 '블루투스' 기능을 켰다가 다시 꺼보세요.",
+                    "내가 제일 자주 쓰는 [카카오톡] 앱을 꾹~ 눌러서 바탕화면 제일 보기 좋은 첫 페이지로 이사(이동)시켜보세요.",
+                    "켜놓은 앱이 너무 많아 폰이 무겁대요. 맨 아래 줄 세 개(|| 또는 ≡) 버튼을 눌러 '모두 닫기'로 시원하게 날려버리세요.",
+                    "지금 내 스마트폰 배터리가 몇 퍼센트(%) 남았는지 숫자를 찾아 확인하고 소리내어 말해보세요!",
+                    "스마트폰 옆면을 눌러 미디어(음악) 소리를 확 줄였다가 다시 키워보세요.",
+                    "밤에 눈이 부셔요! [설정]에서 화면 배경을 까맣게 만들어주는 '다크 모드'를 켰다가 다시 하얗게(라이트 모드) 돌려보세요.",
+                    "바탕화면에 깔려 있는 수많은 앱들 중, 빈 곳을 손가락으로 길게 꾹~ 눌러서 배경화면 설정 창이 뜨게 만들어보세요.",
+                    "눈 보호를 위해 화면을 약간 누렇게 만들어주는 '편안하게 화면 보기(또는 블루라이트 필터)' 기능을 찾아 켜보세요.",
+                    "바탕화면을 좌우로 휙휙 넘기면서 내 스마트폰에 앱이 몇 페이지나 깔려 있는지 세어보세요.",
+                    "폰이 좀 버벅거려요! 스마트폰 옆면의 '전원 버튼'을 길게 꾹 눌러서 '다시 시작(재부팅)' 버튼을 구경만 하고 돌아오세요.",
+                    "내 폰 화면의 빈칸에 손가락을 대고 위로 쓱! 올려서 모든 앱이 모여있는 서랍 화면으로 들어가 보세요.",
+                    "상단 알림창을 한 번 내리고, 한 번 더 밑으로 쫙 내려서 숨겨져 있던 모든 설정 아이콘들이 보이게 해 보세요."
+                ]
+            },
+            {
+                id: 11,
+                title: "제 2과목: 키보드와 친해지기",
+                subtitle: "손가락 놀이터 - 45단계 정복",
+                icon: "⌨️",
+                isGame: true,
+                missions: [
+                    "나비", "우유", "포도", "기차", "모자", "사과", "하늘", "바다", "구두", "치마", "토끼", "오이", "가지", "피아노", "어머니",
+                    "123", "010", "5월 5일", "10시 30분", "77-88", "1등 최고", "별명123", "3.14", "99%", "2024년", "오후 2시", "비빔밥 2개", "3번 버튼", "0번", "88학번",
+                    "안녕하세요!", "사랑해요~", "어디세요?", "즐거운 날^^", "행복하세요♥", "1+1=2", "밥 먹었니?", "보고싶다...", "건강이 최고!", "오늘 날씨 맑음*", "문자 보내기!", "화이팅!!!", "잘 자요~zz", "내일 봐요(안녕)", "끝! 성공!"
+                ]
+            },
+            {
+                id: 1,
+                title: "제 3과목: 여보세요? 나야!",
+                subtitle: "전화 & 연락처",
+                icon: "📲",
+                missions: [
+                    "짝꿍 어르신 전화번호를 '복지관 멋쟁이'(또는 예쁜이)라고 별명을 적어 새 연락처로 저장해 보세요!",
+                    "방금 저장한 '복지관 멋쟁이'에게 띠리링~ 전화를 걸고, 받자마자 '밥 샀어?' 하고 바로 끊어보세요.",
+                    "통화 중에 폰을 귀에서 떼고, 화면에 있는 '스피커(스피커폰)'를 켠 뒤 책상에 내려놓고 만세 부르며 통화해 보세요.",
+                    "마누라 잔소리 피하기! 통화 중에 '내 소리 차단(음소거)' 버튼을 눌러 내 한숨 소리가 저쪽에 안 들리게 막아보세요.",
+                    "며느리 목소리 간직해야죠! 114에 전화를 걸고 화면의 '녹음' 버튼을 눌러 안내 멘트를 살짝 녹음해 보세요.",
+                    "영감님(또는 받기 싫은 번호) 전화가 왔다 상상하고, 빨간 전화기를 밖으로 휙~ 밀어서 '거절'해 보세요.",
+                    "[최근 기록]에 들어가서 오늘 나한테 가장 전화를 오래 한 사람이 누구인지 찾아보세요.",
+                    "연락처에서 내 이름을 찾은 뒤, 프로필 사진을 가장 잘 나온 내 얼굴 사진으로 떡하니 바꿔보세요.",
+                    "연락처에 자주 거는 자녀 번호를 찾아, 이름 옆에 있는 별표(★)를 눌러 '즐겨찾기'에 쏙 넣어보세요.",
+                    "즐겨찾기에 넣은 번호가 연락처 목록 맨 위로 올라와 있는지 두 눈으로 확인해 보세요.",
+                    "키패드(숫자판)에서 단축번호 1번을 꾹~ 눌러보세요. (아무도 지정 안 되어 있으면 제일 친한 사람으로 등록해 보세요!)",
+                    "[연락처] 우측 상단 돋보기를 누르고 '김' 씨 성을 가진 사람이 내 폰에 몇 명인지 세어보세요.",
+                    "옛날에 저장해 두고 평생 안 걸 것 같은 번호(예: 고장 난 카센터)를 하나 찾아서 길게 누른 뒤 [삭제] 해보세요.",
+                    "자녀나 손주에게 카메라 모양 '영상통화'를 걸어서 '나 스마트폰 천재 됐다!'라고 자랑해 보세요.",
+                    "대출받으라고 온 스팸 번호를 [최근 기록]에서 찾아 길게 꾹 누른 뒤 '수신 차단' 버튼을 쾅! 눌러주세요.",
+                    "나랏님도 못 외우는 내 전화번호! [설정]-[휴대전화 정보]에서 내 번호를 찾아 또박또박 소리 내어 읽어보세요.",
+                    "기본 벨소리는 지겨워! [설정]-[소리]에서 내 스마트폰 벨소리를 신나는 다른 음악으로 바꿔보세요.",
+                    "내 폰이 회의 중일 때 전화가 오면? 화면을 쓸어내려 전화 대신 '지금 회의 중입니다'라는 거절 문자를 바로 보내보세요.",
+                    "전화 올 때 진동도 같이 징~징~ 울리게 설정 창에서 '전화 올 때 진동도 울림'을 찾아 켜보세요.",
+                    "전화 앱에서 119를 찍어놓고(절대 통화 버튼 누르지 마세요!), 긴급 전화번호가 맞는지 확인만 하고 싹 지워보세요.",
+                    "짝꿍 전화번호를 이미 저장했는데, 다시 연락처에 들어가서 이름 뒤에 '하트(❤)'를 붙여서 이름을 수정해 보세요.",
+                    "내 스마트폰으로 해외에 있는 가족에게 전화할 일이 있는지 생각하며 '국제전화(00700 등)' 번호를 키패드에 쳐보세요.",
+                    "연락처 그룹 기능! [연락처]-[그룹]에 들어가서 '복지관 친구들'이라는 새 그룹을 하나 만들어보세요.",
+                    "방금 만든 '복지관 친구들' 그룹에 우리 반 짝꿍 번호를 쏙 집어넣어 보세요.",
+                    "통화 기록에 빨간색 화살표(부재중)로 표시된, 내가 못 받은 전화가 총 몇 개나 되는지 세어보세요."
+                ]
+            },
+            {
+                id: 2,
+                title: "제 4과목: 엄지족의 탄생",
+                subtitle: "문자 메시지",
+                icon: "✉️",
+                missions: [
+                    "자식한테 용돈 좀 받게 문자 보내봅시다! '사랑하는 아들/딸, 요즘 지갑이 얇네~^^' 라고 직접 타자를 쳐보세요.",
+                    "문자 치다 틀렸어요! 썼던 글씨 끝에 있는 [X (지우기)] 버튼을 꾹~~ 눌러서 한방에 다 지워버리세요.",
+                    "돋보기 없을 땐 말로 하세요! 마이크 버튼을 누르고 폰에 대고 '오늘 저녁엔 삼겹살 구워 먹자'라고 말해 글로 써보세요.",
+                    "자판에 있는 스마일(이모티콘) 얼굴을 눌러서, 가장 슬프게 우는 얼굴(😭)을 찾아 보내보세요.",
+                    "내 폰에 있는 예쁜 꽃 사진을 더하기(+) 버튼을 눌러서 첨부한 뒤, 짝꿍에게 '내 보물 1호야' 하고 보내보세요.",
+                    "아휴, 눈 침침해. 문자 온 거 화면을 두 손가락으로 쫙! 벌려서 글씨를 집채만 하게 키워보세요.",
+                    "은행에서 온 '인증번호: 123456' 문자를 찾아서, 인증번호 숫자만 손가락으로 꾹 눌러서 복사해 보세요.",
+                    "돈 빌려달라는 스팸 문자를 꾹 누른 뒤 휴지통 모양 '삭제' 버튼을 눌러 시원하게 날려버리세요.",
+                    "복지관 중요 안내 문자를 길게 꾹 눌러서 다른 친한 어르신께 '전달(공유)' 버튼을 눌러 쏴주세요!",
+                    "문자 입력창 위에 폰이 스스로 추천하는 말창(예: 네 알겠습니다)이 뜨면 그걸 손가락으로 툭 쳐서 1초 만에 답장해 보세요.",
+                    "모르는 번호로 '해외 결제되었습니다 [http://영어주소]' 문자가 왔습니다. 절대 누르지 말고 지우는 시늉을 해보세요!",
+                    "자판 아래쪽에 가장 기다란 막대기(스페이스바)를 팍팍 눌러서 글씨 사이를 태평양처럼 띄어쓰기 해보세요.",
+                    "문자 목록 상단 돋보기를 누르고 '택배'라고 검색해서, 최근에 내 택배가 어디로 왔는지 옛날 문자를 찾아보세요.",
+                    "손주가 보내준 귀여운 동영상(또는 사진) 문자를 열고, 저장을 눌러 내 갤러리(사진첩)로 쏙 보관해 보세요.",
+                    "그룹 문자(단체 문자) 만들기! 수신인 칸에 짝꿍 2명 이름(또는 번호)을 한꺼번에 넣고 '밥 먹으러 가자' 보내보세요.",
+                    "키보드를 '천지인'에서 다른 키보드(예: 쿼티 등)로 바꿀 수 있는 자판 설정(톱니바퀴)을 찾아 한 번 눌러보세요.",
+                    "글씨를 다 쳤는데 제일 앞 글자가 틀렸어요. 손가락으로 문장 맨 앞쪽을 콕 찍어서 커서(깜빡이는 선)를 이동시켜보세요.",
+                    "내가 친 글씨 전체를 길게 꾹 누르고, 양쪽 물방울을 드래그해서 '모두 선택'한 뒤 '복사' 버튼을 눌러보세요.",
+                    "방금 복사한 글씨를 문자 입력창 빈 곳을 길게 꾹 눌러서 '붙여넣기'로 쌍둥이처럼 똑같이 복제해 보세요.",
+                    "문자 앱 메뉴에서 '휴지통'을 찾아 들어가 보고, 내가 예전에 버렸던 문자들이 아직 남아있는지 구경해 보세요.",
+                    "자주 연락하는 배우자나 자녀의 문자 대화방을 꾹 눌러서, 목록 맨 위에 항상 있도록 '맨 위로 고정' 시켜보세요.",
+                    "문자 메시지에 첨부할 사진 고를 때, 갤러리 말고 '카메라' 모양을 눌러서 짝꿍 얼굴을 찍어서 보내보세요.",
+                    "문자 작성 중에 더하기(+)를 눌러 [위치]를 선택하고, 지금 내가 있는 복지관 주소를 문자로 쏴보세요.",
+                    "읽지 않은 문자가 쌓여서 숫자(10, 20..)가 떠 있나요? 메뉴에서 '모두 읽음으로 표시'를 눌러 숫자를 싹 없애보세요.",
+                    "스미싱(사기) 문자를 예방하기 위해, 문자에 들어있는 파란색 영어 링크는 누르면 안 된다고 짝꿍에게 크게 설명해 보세요!"
+                ]
+            },
+            {
+                id: 3,
+                title: "제 5과목: 전국민 수다쟁이",
+                subtitle: "카카오톡",
+                icon: "💬",
+                missions: [
+                    "카카오톡 프로필(내 사진)을 누르고, 상태 메시지에 '내 나이가 어때서~ 딱 놀기 좋은 나이지!' 라고 적어보세요.",
+                    "내 카톡 프로필 사진을 갤러리에서 가장 잘생기고/예쁘게 나온 사진으로 멋지게 갈아 끼워보세요.",
+                    "카톡 단체방에서 알림이 너무 많이 울려요! 메뉴(≡)를 누르고 종 모양을 쳐서 알림 끄기(소리 안 나게)를 성공해 보세요.",
+                    "짝꿍 어르신에게 요금 안 나오는 카톡 무료 전화, '보이스톡'을 걸어서 '내 목소리 잘 들려?' 하고 통화해 보세요.",
+                    "손가락 아프게 타자 치지 말고 녹음합시다! 입력창 옆 마이크(음성 메시지)를 누르고 '오늘 점심 내가 쏜다!' 녹음해서 날려보세요.",
+                    "카톡방에 사진 5장 보낼 때 한 장씩 카톡!카톡! 울리게 하지 말고, '사진 묶어보내기' 체크해서 한 방에 깔끔하게 보내보세요.",
+                    "다른 사람 흉보는 카톡을 잘못 보냈다!! 식은땀 흘리며 보낸 글을 꾹 누르고 [모든 대화 상대에게서 삭제]를 눌러 펑! 지워보세요.",
+                    "움직이는 큰 이모티콘을 골라서 짝꿍에게 보내보세요 (엉덩이 춤추는 거나 하트 뿅뿅 나오는 걸로!).",
+                    "카톡방 안에서 화면 아래 샵(#)을 누르고, '오늘의 운세'를 검색해서 내 운세가 좋은지 짝꿍 단톡방에 자랑해 보세요.",
+                    "카톡방 안에서 더하기(+)를 누르고 [송금(돈 보내기)] 버튼이 어떻게 생겼는지 구경만 하고 얼른 닫아보세요! (내 돈은 소중하니까!)",
+                    "내 생일인데 선물이 안 와! 카톡 [선물하기]에 들어가서 맛있는 케이크를 찾아 내 '위시리스트(찜)'에 담아보세요.",
+                    "친척 단톡방에서 아무도 모르게 쥐도 새도 모르게 '조용히 나가기' 버튼을 찾아 눌러보세요 (실제로 나가진 마세요!).",
+                    "우리 제일 친한 복지관 단톡방을 길게 눌러서, 항상 맨 위에 보일 수 있도록 '채팅방 상단 고정' 핀을 꽂아보세요.",
+                    "아무도 없는 '나와의 채팅방'을 열고, 까먹으면 안 되는 우리 집 현관문 비밀번호를 슬쩍 적어놔 보세요.",
+                    "카톡방 안에서 더하기(+)를 누르고 [지도]를 눌러, 지금 우리가 있는 복지관 위치를 쾅 찍어서 전송해 보세요.",
+                    "카톡 친구 목록에서 상단 돋보기 버튼을 누르고 자녀 이름을 타자로 쳐서 빨리 찾아보세요.",
+                    "새로운 친구 번호를 받았습니다. 사람 모양 아이콘에 +가 그려진 버튼을 눌러 '연락처로 추가'를 해보세요.",
+                    "요즘은 번호 대신 이걸 쓴대요! 내 'QR코드'를 화면에 띄워서 짝꿍이 카메라로 찍어 나를 추가하게 해 보세요.",
+                    "카톡방 우측 상단 줄 세 개(≡)를 누르고 [사진/동영상 서랍]을 열어, 과거에 주고받은 사진들을 쭉 감상해 보세요.",
+                    "단톡방에서 대화가 너무 많아 위로 한참 올라갔네요. 화면 우측 하단의 '↓ (맨 아래로 이동)' 화살표를 눌러 단숨에 내려와 보세요.",
+                    "카톡방에서 짝꿍이 보낸 사진을 꾹 누르고, 내 스마트폰 갤러리로 저장하는 '저장(다운로드)' 화살표를 눌러보세요.",
+                    "내가 보낸 메시지 옆에 작게 떠 있는 숫자 '1'이 무슨 뜻인지 짝꿍에게 큰 소리로 설명해 보세요!",
+                    "단톡방 이름이 '김철수, 이영희, 박민수...' 너무 길어요. 단톡방 설정에 들어가 '복지관 삼총사'로 방 이름을 예쁘게 바꿔보세요.",
+                    "자꾸 돈 빌려달라는 이상한 친구 카톡을 길게 꾹 누르고, '차단'을 눌러 내 인생에서 지워버리세요.",
+                    "카카오톡 전체 설정(톱니바퀴) - [앱 관리(또는 저장공간 관리)]에 들어가서 꽉 찬 '캐시 데이터 삭제'를 눌러 폰을 시원하게 비워주세요."
+                ]
+            },
+            {
+                id: 4,
+                title: "제 6과목: 나 혼자서도 잘 다녀!",
+                subtitle: "카카오맵 길찾기",
+                icon: "📍",
+                missions: [
+                    "길 잃었을 때 생명줄! 카카오맵을 켜고 나침반(과녁) 버튼을 눌러서 지금 내 위치로 지도 한가운데를 딱! 맞춰보세요.",
+                    "검색창에 '해운대 해수욕장'을 치고 부산 바다가 어떻게 생겼는지 지도로 구경해 보세요.",
+                    "손가락 두 개로 지도를 쭉쭉 벌려 확대해서, 우리 복지관 건물 주변 골목식당 이름들을 뒤져보세요.",
+                    "길찾기(구불구불 화살표)를 누르고 도착지를 '청와대'로 찍어보세요. (진짜 가진 않을 겁니다!)",
+                    "'청와대'까지 대중교통(버스/지하철 모양)을 타고 가려면 한 번에 가는 노선이 있는지 찾아보세요.",
+                    "돋보기 검색창에 '맛집'이라고 검색해서, 복지관 근처 별점(★)이 가장 높은 식당 하나를 찜해두세요!",
+                    "복지관 앞 버스 정류장 그림을 지도에서 콕 누르고, 제일 빨리 오는 버스가 몇 분 뒤에 도착하는지 매의 눈으로 확인해 보세요.",
+                    "[신기방기 기능] 지도 우측 카메라 모양 '로드뷰'를 켜고 파란 선을 눌러 실제 길거리에 서 있는 것처럼 둘러보세요!",
+                    "내가 태어난 고향 집 주소를 검색한 뒤 별표(★)를 눌러 내 즐겨찾기에 쏙~ 저장해 보세요.",
+                    "화장실 급할 때 최고! 지도 주변 검색에서 '개방 화장실'(또는 공중 화장실)을 검색해 제일 가까운 곳을 찾아보세요.",
+                    "자동차 아이콘(내비게이션)을 누르고, 길 안내하는 예쁜 아가씨(안내 음성) 목소리가 잘 나오는지 확인해 보세요.",
+                    "걷기 운동 시작! 도보(사람 걷는 모양)를 누르고, 여기서 가장 가까운 큰 마트까지 걸어서 몇 분 걸리는지 확인해 보세요.",
+                    "지하철 노선도를 켜고 노안 테스트! '노량진역'이 몇 호선이고 무슨 색깔인지 두 눈을 부릅뜨고 찾아보세요.",
+                    "아까 찾은 기가 막힌 '맛집' 정보를 화면 아래 공유(전달) 버튼을 눌러서 짝꿍 카톡으로 쏴주세요! (사달라는 압박입니다)",
+                    "지도 우측 상단 사각형 두 개 겹친 모양을 누르고, 지도를 '스카이뷰(위성사진)'로 바꿔서 진짜 지붕을 감상해 보세요.",
+                    "지도에서 버스를 탈 때, 내가 탈 버스가 지금 전 정류장에 있는지, 전전 정류장에 있는지 움직이는 버스 모양을 찾아보세요.",
+                    "자전거 타기 좋은 날씨! 길찾기에서 자전거 모양을 누르고, 여의도 한강공원까지 자전거로 얼마나 걸리는지 알아보세요.",
+                    "현금 뽑아야죠! 검색창에 내가 쓰는 'OO은행 ATM'(예: 국민은행 ATM)을 검색해서 제일 가까운 기계를 찾아보세요.",
+                    "카카오맵 첫 화면에서 [주변] 탭을 눌러, 내 근처에 있는 '약국', '편의점', '카페' 버튼들이 어떻게 모여있는지 확인해 보세요.",
+                    "스마트폰 화면을 두 번 톡톡 빠르게 치고(더블 탭) 손가락을 떼지 않은 채로 위아래로 움직여서 한 손가락으로 지도 확대/축소를 해보세요. (고급 기술!)",
+                    "버스 노선도를 눌러서, 첫차 시간과 막차 시간이 밤 몇 시까지인지 상세 정보를 찾아보세요.",
+                    "스마트폰 윗부분을 쓸어내려 위치정보(GPS) 아이콘이 파랗게 켜져 있는지 확인하고, 껐다가 다시 켜보세요.",
+                    "길찾기를 검색한 후 화면을 아래로 쭉 내려서, 대중교통 말고 택시를 탔을 때 예상 택시비가 얼마로 나오는지 확인해 보세요.",
+                    "지도를 두 손가락을 이용해 뱅그르르 돌려보세요! 지도가 회전하면 우측 상단의 나침반 기호를 눌러 다시 북쪽으로 맞춰보세요.",
+                    "복지관 주변 공원이나 산책로를 검색해서 도보 모드로 설정한 후, 예상 소모 칼로리(kcal)가 뜨는지 확인해 보세요."
+                ]
+            },
+            {
+                id: 5,
+                title: "제 7과목: 회장님처럼 택시 부르기",
+                subtitle: "카카오 T",
+                icon: "🚕",
+                missions: [
+                    "다리도 아프네 택시나 부르자! 카카오 T 앱을 열고 노란색 [택시] 그림을 당당하게 꾹 눌러보세요.",
+                    "내 출발지가 복지관인지 확인하고, 도착지는 우리 동네에서 가장 큰 종합병원(예: 아산병원)으로 타자를 쳐서 입력해 보세요.",
+                    "화면을 쓱 올려 비싼 모범택시 말고, 가장 기본인 일반택시(일반 호출)가 선택되어 있는지 확인해 보세요.",
+                    "[중요 미션] 카드 없어도 탈 수 있어요! 결제 수단을 옆으로 밀어 '기사님께 직접 결제(만나서 결제)'로 꼭! 바꿔보세요.",
+                    "호출하기 버튼 누르기 직전! 화면에 뜨는 예상 택시 요금을 보고 '헉 비싸네, 버스 타야지' 하고 중얼거려 보세요.",
+                    "진짜 부르면 기사님 달려오니까, [호출하기] 버튼은 절대 누르지 말고 뒤로 가기(◁)를 눌러 도망쳐 나오세요!",
+                    "[기차/KTX] 메뉴에 들어가서, 이번 주 일요일 서울역에서 출발하는 부산행 기차표 시간이 언제 있는지 구경해 보세요.",
+                    "밤에 택시 타도 무섭지 않아요! 내 택시 정보를 자식들에게 카톡으로 날려주는 '안심 메시지' 메뉴를 찾아보세요.",
+                    "집 주소를 '우리 집'이라고 미리 등록해서, 다음엔 타자 일일이 칠 필요 없이 한 방에 팍! 부를 수 있게 설정해 보세요.",
+                    "택시 기사님이 헷갈리지 않게, 출발 위치 핀을 복지관 정문 앞 길가로 정확히 살짝 움직여서 꽂아보세요.",
+                    "카카오 T 메인 화면 하단에서 [내 정보]를 누르고, 내 이름과 전화번호가 맞게 등록되어 있는지 확인해 보세요.",
+                    "친구 집에 가다가 중간에 시장에 들르고 싶어요. 목적지 검색 화면에서 더하기(+) 모양의 '경유지 추가' 버튼을 찾아 눌러보세요.",
+                    "[이용 기록] 메뉴를 찾아서 눌러보고, 예전에 카카오 택시를 타고 어디를 다녀왔는지 과거 기록을 훑어보세요.",
+                    "술 취한 친구 대리운전 불러주기! 메인 화면에서 [대리] 버튼을 눌러보고 요금이 얼마나 비싼지 구경만 해보세요.",
+                    "공항 갈 때 쓰는 기능! 메인 화면의 수많은 아이콘 중에서 비행기 모양이 있는 아이콘(항공권이나 벤)을 하나 찾아보세요.",
+                    "택시 호출 후 폰 화면에 뜨는 기사님의 차 번호 앞 2자리와 차량 색상을 확인하는 곳이 어디인지 짝꿍에게 설명해 보세요.",
+                    "택시가 잡힌 후 기사님과 통화하고 싶을 때 누르는 초록색 [전화기] 버튼 위치를 눈으로 확인해 보세요.",
+                    "호출을 눌렀는데 마음이 바뀌었어요! 택시가 출발하기 전에 재빨리 눌러야 하는 [호출 취소] 버튼이 어디 뜨는지 상상해 보세요.",
+                    "내비게이션 기능도 있어요! 상단 탭에서 '내비'를 누르고, 운전할 때 쓰는 카카오 내비 화면을 슬쩍 열어보세요.",
+                    "고속버스도 예매 가능해요! [시외/고속] 버튼을 누르고 우리 고향 가는 버스비가 지금 얼마인지 요금을 알아보세요.",
+                    "택시에서 내릴 때, 기사님이 너무 친절하셨다면 앱에서 어떤 점수(별점)를 줄 수 있는지 별 5개 만점이라고 설명해 보세요.",
+                    "카카오 T 앱의 글씨가 작다면, 내 스마트폰 자체의 글자 크기를 키우면 앱 글씨도 같이 커진다는 것을 짝꿍에게 알려주세요.",
+                    "앱 안에서 '공지사항'이나 '이벤트' 메뉴를 찾아, 요즘 택시 할인 쿠폰을 주는 게 있는지 매의 눈으로 확인해 보세요.",
+                    "다른 사람이 부른 택시를 내가 타면 어떻게 될까요? 기사님 폰에 뜬 이름과 내 이름이 다르면 혼난다고 짝꿍에게 경고해 주세요!",
+                    "자동결제용 카드를 굳이 등록하고 싶다면, [내 정보]-[결제수단 관리]로 들어가서 카드 번호 입력창을 띄우는 것까지만 해보세요."
+                ]
+            },
+            {
+                id: 6,
+                title: "제 8과목: 인생 샷과 오스카상",
+                subtitle: "카메라 & 갤러리",
+                icon: "📷",
+                missions: [
+                    "다 같이 치즈~! 카메라를 켜고 둥근 화살표를 눌러 셀카 모드로 바꾼 뒤 손가락 브이(V)를 하며 한 장 찰칵!",
+                    "앞에 있는 화분을 찍을 때, 두 손가락을 화면에 대고 벌려서 화분이 대문짝만하게 나오도록 '확대(줌)' 한 뒤 찍어보세요.",
+                    "어두울 때도 환하게! 화면 상단에 있는 번개 모양 '플래시' 아이콘을 눌러서 강제로 번쩍! 불이 터지게 사진을 찍어보세요.",
+                    "동영상 모드로 바꾼 뒤 빨간 버튼을 누르고, 짝꿍과 '안녕하세요~' 인사하는 5초짜리 영상을 찍고 멈춤(네모)을 눌러보세요.",
+                    "손 흔들림 방지! 화면 상단에 있는 손바닥 모양이나 지그재그(손떨림 방지) 기호를 켜서 안정적으로 폼 잡고 찍어보세요.",
+                    "사진 찍을 때 손 뻗기 힘들면? 볼륨(음량) 버튼을 찰칵 눌러보세요! 이게 바로 숨겨진 사진 찍기 버튼입니다.",
+                    "단체 사진 찰칵! 화면 위에 있는 시계 모양 '타이머'를 3초로 맞추고, 버튼을 누른 뒤 3, 2, 1 폼 잡고 찍어보세요.",
+                    "점프 사진 찍기 딱! 사진 찍기 동그란 하얀 버튼을 누른 채로 아래쪽(또는 바깥쪽)으로 슥 끌어내려 '연속 촬영(다다다닥!)'을 해보세요.",
+                    "[갤러리(사진첩)] 앱을 엽니다. 아까 찍은 내 얼굴을 찾아, 얼굴 주름살까지 보이게 두 손가락으로 쫙 확대해 보세요.",
+                    "갤러리에서 내 인생 샷을 골라 아래쪽 하트(❤) 버튼을 눌러 '즐겨찾는 사진'으로 찜해두세요.",
+                    "사진 편집(연필 모양)을 누르고 조절 점을 당겨서, 쓸데없는 배경은 다 잘라내고 내 얼굴만 꽉 차게 '자르기' 해보세요.",
+                    "편집 화면에서 동그라미 세 개 겹친 '필터'를 눌러, 내 얼굴이 뽀얗게 변하는 '뽀샤시 필터'나 흑백으로 바꿔 저장해 보세요.",
+                    "사진에 글씨 쓰기! 편집 메뉴에서 T 모양(텍스트)이나 스마일(그리기)을 눌러 사진 위에 '오늘 참 좋다'라고 손글씨를 써보세요.",
+                    "갤러리에서 흔들려서 버리고 싶은 사진 딱 5장을 길게 꾹꾹 눌러 선택한 후, 휴지통 모양을 눌러 과감히 삭제해 보세요.",
+                    "앗 실수로 예쁜 사진을 지웠다!! 당황하지 말고 갤러리 메뉴(≡)에서 [휴지통]을 찾아 방금 지운 사진을 [복원]해 살려내 보세요!",
+                    "갤러리 하단 탭에서 [사진] 말고 [앨범] 탭을 눌러서 사진들이 날짜별이 아니라 폴더별로 모여있는 걸 확인해 보세요.",
+                    "[앨범] 탭 우측 상단 더하기(+)를 누르고, '가족여행'이라는 이름의 예쁜 새 앨범(폴더)을 하나 만들어보세요.",
+                    "방금 만든 '가족여행' 앨범에 갤러리에 있던 손주나 가족사진 몇 장을 콕콕 찍어서 집어넣어(이동해) 보세요.",
+                    "갤러리 우측 상단 돋보기를 누르고 '개' 또는 '꽃'이라고 타자로 쳐보세요. 폰이 알아서 관련 사진을 찾아주나 확인!",
+                    "내가 찍은 예쁜 꽃 사진을 열고 화면 아래의 공유(구부러진 화살표)를 눌러서 카카오톡 짝꿍 방으로 전송해 보세요.",
+                    "카메라에서 [더보기]를 누르고 넓은 풍경을 찍을 때 폰을 옆으로 쭉 돌리며 찍는 '파노라마' 모드를 구경만 해보세요.",
+                    "카메라 설정(톱니바퀴)에 들어가서, 사진 구도를 잡기 편하게 화면에 바둑판 선을 그어주는 '수직/수평 안내선'을 켜보세요.",
+                    "갤러리에서 동영상을 열고, 가위 모양(편집)을 눌러 앞뒤에 쓸데없는 부분을 잘라내고 알맹이만 남게 동영상 길이 조절을 해보세요.",
+                    "남한테 보여주기 싫은 뱃살 나온 사진 하나를 길게 눌러 점 세 개(더보기)를 누르고 '보안 폴더로 이동' 또는 숨기기를 찾아보세요.",
+                    "폰을 가로로 눕혀서 갤러리 사진을 크게 한 장씩 샥샥 옆으로 넘겨가며 전시회 온 것처럼 감상해 보세요."
+                ]
+            },
+            {
+                id: 7,
+                title: "제 9과목: 놀면 뭐하니?",
+                subtitle: "유튜브 & 생활 꿀팁",
+                icon: "📺",
+                missions: [
+                    "유튜브(YouTube)를 켭니다! 돋보기를 누르고 제일 좋아하는 가수(예: 임영웅) 이름과 '노래 모음'을 쳐서 검색해 보세요.",
+                    "영상 시작할 때 나오는 지겨운 광고! 화면에 '광고 건너뛰기' 글자가 뜨자마자 총알처럼 눌러서 본 영상으로 가보세요.",
+                    "이 노래 너무 좋네! 영상 아래 최고야(엄지 척 👍) 모양 '좋아요' 버튼을 인심 좋게 꾹 눌러주세요.",
+                    "우리 가수 노래 매일 들어야지! 빨간색 [구독] 버튼을 눌러서 유튜브 채널의 열혈 팬이 되어보세요.",
+                    "유튜브 화면을 손가락으로 톡 치면 나타나는 우측 상단 톱니바퀴를 누르고, 영상 '화질'을 1080p 등 가장 선명한 숫자로 올려보세요.",
+                    "좋은 노래 혼자 들을 수 없죠! 화살표(공유) 버튼을 눌러 짝꿍 카카오톡으로 유튜브 링크를 선물해 보세요.",
+                    "유튜브 하단 메뉴에서 [보관함(또는 나)]을 누르고, 내가 여태까지 눌렀던 시청 기록이나 좋아요 한 영상들이 모여있는 걸 확인하세요.",
+                    "영상 밑에 글씨가 막 올라가나요? 말풍선에 '댓글'이라고 써진 곳을 눌러 사람들의 반응을 읽어보고 나도 '노래 참 좋네요' 댓글을 써보세요.",
+                    "돋보기로 '집에서 하는 관절 체조'를 검색한 후, 유튜브 영상을 크게 켜놓고 1분 동안 따라 하면서 굳은 몸을 풀어보세요!",
+                    "계산기 앱을 엽니다! 시장에서 산 사과 15,000원짜리 3상자 값이 얼마인지 곱하기(x) 파리기호 이용해 계산해 보세요.",
+                    "내일 아침 복지관 갈 시간! [시계] 앱 알람 탭에서 오전 7시 30분에 '일어나라 용사여!'라는 알람을 딱 맞춰보세요.",
+                    "라면 끓일 때 최고! [시계] 앱 하단에서 [타이머] 탭을 누르고, 4분 30초를 맞춘 뒤 '시작'을 눌러 초침이 거꾸로 가는 걸 보세요.",
+                    "달력(캘린더) 앱을 열고, 다음 달 내 생일이나 가족 생일 날짜를 꾹 눌러 'O서방 생일 파티'라고 일정을 적어보세요.",
+                    "내일 비 오나? 바탕화면에 있는 해/구름 모양(날씨 앱)을 누르고, 내일 우리 동네 날씨와 미세먼지 수치를 확인해 보세요.",
+                    "폰에 입을 대고 말해봅시다! 구글 마이크 기호를 누르거나 홈 버튼을 길게 누르고 '오늘 성동구 날씨 알려줘'라고 비서에게 명령해 보세요.",
+                    "이 비서 참 똑똑하네! 다시 마이크를 켜고 '신나는 트로트 틀어줘'라고 말해서 음악이 알아서 나오게 만들어보세요.",
+                    "녹음기(음성녹음) 앱을 찾아서 열고, 빨간 동그라미를 누른 뒤 짝꿍에게 '우리 평생 친하게 지내자!'라고 멋진 메시지를 녹음해 보세요.",
+                    "플레이스토어(▶모양) 앱을 열고, 맨 위 검색창에 '당근마켓'을 타자로 쳐서 중고 거래 앱이 어떻게 생겼나 구경만 해보세요.",
+                    "스마트폰 배경화면에 띄워놓고 쓰는 포스트잇! '삼성 노트(또는 메모장)' 앱을 열어 내일 장볼거리 '두부, 콩나물'을 적어보세요.",
+                    "건강이 최고! [삼성 헬스(또는 만보기)] 앱을 찾아 열어보고, 내가 오늘 복지관 올 때까지 몇 걸음이나 걸었는지 자랑해 보세요.",
+                    "스마트폰에도 돋보기가 있습니다! 화면 위를 쓸어내려 제어센터에서 '돋보기' 아이콘을 찾아 신문 글씨를 크게 확대해 보세요.",
+                    "치매 예방 게임 앱 깔기! 플레이스토어에서 '스도쿠'나 시계 모양 앱을 검색해서 [설치] 버튼을 살짝 한 번 눌렀다가 얼른 취소해 보세요.",
+                    "글씨가 작아서 안 보일 때, 스마트폰 홈 화면(바탕화면)의 빈 공간을 길게 누르고 '위젯'을 선택해 날씨나 시계를 큰 놈으로 꺼내보세요.",
+                    "폰 정리 끝판왕! 디바이스 케어(또는 설정-배터리/디바이스 케어)에 들어가서 파란색 [지금 최적화] 빗자루 버튼을 눌러 폰을 새것처럼 쌩쌩하게 청소해 보세요.",
+                    "대망의 마지막 미션! 화면을 완전히 끈 다음, 옆 짝꿍과 힘차게 하이파이브(손뼉 치기)를 정답게 치며 '나도 이제 스마트폰 도사다!!' 라고 복지관이 떠나가라 크게 외쳐보세요!!"
+                ]
+            },
+            {
+                id: 8,
+                title: "제 10과목: 똑똑한 내 친구",
+                subtitle: "제미나이(AI) 활용",
+                icon: "🧠",
+                missions: [
+                    "스마트폰에서 'Google' 앱을 열고 검색창 근처에 있는 반짝이는 별 모양(Gemini) 아이콘을 찾아 꾹 눌러보세요.",
+                    "타자 칠 필요 없어요! 마이크 모양 버튼을 누르고 '안녕? 넌 이름이 뭐니?' 라고 말로 물어보세요.",
+                    "오늘 저녁 반찬이 고민인가요? '냉장고에 계란과 두부가 있는데 만들 수 있는 쉬운 요리 3개만 알려줘'라고 물어보세요.",
+                    "손주에게 멋진 할아버지/할머니가 되어봅시다! '요즘 10대들이 가장 좋아하는 아이돌 가수가 누구야?'라고 질문해 보세요.",
+                    "며느리나 사위에게 보낼 문자를 부탁해 보세요. '며느리 생일 축하 문자를 감동적으로 3줄로 써줘.'",
+                    "모르는 영어 단어가 있을 때 물어보세요. '영어 단어 apple이 무슨 뜻이야?'라고 질문해 보세요.",
+                    "해외여행 갔을 때 써먹기! '화장실이 어디인가요? 를 영어로 어떻게 말해?'라고 번역을 부탁해 보세요.",
+                    "제미나이가 대답한 내용 중에 마음에 드는 글을 꾹~ 눌러서 '복사'한 뒤 짝꿍 카톡방에 붙여넣기 해보세요.",
+                    "글씨가 너무 많아 눈이 침침할 때! 스피커 모양 아이콘(듣기)을 눌러 제미나이가 읽어주는 목소리를 편하게 들어보세요.",
+                    "제미나이와 끝말잇기 게임을 해봅시다! '우리 끝말잇기 게임 하자. 네가 먼저 시작해'라고 말해보세요.",
+                    "옛날 생각이 날 때, '1970년대 대한민국에서 가장 유행했던 트로트 노래 5곡 추천해 줘'라고 물어보세요.",
+                    "심심할 때 웃음을 달라고 해보세요. '아재개그 진짜 웃긴 걸로 3개만 해줘'라고 부탁해 보세요.",
+                    "카메라 기능을 써볼까요? 대화창 옆 카메라(또는 +) 버튼을 누르고 눈앞에 있는 펜이나 컵을 찍은 뒤 '이게 뭐야?'라고 물어보세요.",
+                    "복약 지도가 어려울 때! 약국에서 받은 약 봉투를 사진으로 찍고 '이 약들은 언제 먹는 거야? 쉽게 요약해 줘'라고 질문해 보세요. (주의: 실제 복용은 꼭 의사/약사 지시를 따르세요!)",
+                    "이번 주말 날씨를 물어보세요. '이번 주 일요일에 서울 성동구에 비가 올까? 우산 챙겨야 해?'",
+                    "잠이 안 올 때! '마음이 편안해지는 따뜻한 전래동화 짧게 하나 지어줘'라고 이야기꾼 역할을 맡겨보세요.",
+                    "갑자기 궁금한 게 생겼을 때! '왜 바닷물은 짠맛이 나는 거야? 초등학생도 이해하게 쉽게 설명해 줘'라고 물어보세요.",
+                    "제미나이의 대답이 마음에 들면 대답 아래쪽에 있는 최고야(엄지 척 👍) 버튼을 꾹 눌러서 칭찬해 주세요.",
+                    "식물 키우기 고수 되기! 시들해진 화분 사진을 찍어서 올리고 '이 화초가 왜 시들까? 물을 너무 많이 줬나?'라고 물어보세요.",
+                    "친구들과 여행을 가려고 합니다. '60대 어르신 4명이서 가는 1박 2일 부산 여행 코스 짜줘. 걷기 편하고 맛있는 거 많은 곳으로!'라고 부탁해 보세요.",
+                    "노래 가사가 가물가물할 때! '나훈아의 테스형 가사 1절만 알려줘'라고 물어보세요.",
+                    "나만의 멋진 시인이 되어봅시다. '가을 단풍과 노을을 주제로 멋진 시를 한 편 지어줘'라고 요청해 보세요.",
+                    "대답이 마음에 안 들 때! '다시 대답해 줘' 또는 '조금 더 짧게 3줄로 요약해 줘'라고 다시 깐깐하게 명령해 보세요.",
+                    "스마트폰 사용법도 물어볼 수 있어요! '스마트폰 화면이 너무 빨리 꺼지는데, 안 꺼지게 하는 방법 단계별로 알려줘'라고 질문해 보세요.",
+                    "새로운 취미를 찾고 싶을 때, '돈 안 들고 집에서 혼자 할 수 있는 60대 취미 5가지만 추천해 줘'라고 물어보세요.",
+                    "카톡방에서 받은 긴 글(뉴스 등)을 복사해서 제미나이에게 붙여넣고 '이 글 너무 길어, 딱 3줄로 핵심만 요약해 줘'라고 부탁해 보세요.",
+                    "대화 내역이 너무 많으면 헷갈려요! 왼쪽 상단 메뉴(줄 세 개)를 누르고 [새 채팅(또는 + 기호)] 버튼을 찾아 새로운 대화를 시작해 보세요.",
+                    "예전에 제미나이와 나눴던 대화 목록들이 화면 왼쪽 서랍(메뉴)에 고스란히 저장되어 있는지 확인해 보세요.",
+                    "제미나이에게 '너는 남자니 여자니?' 또는 '나이가 몇 살이야?'라고 엉뚱한 질문을 던져보고 뭐라고 대답하는지 들어보세요.",
+                    "스마트폰 카메라로 실시간 대화하기! 제미나이 앱에서 '카메라(또는 라이브)' 버튼을 켜고 눈앞의 풍경이나 사물을 비추며 '지금 내가 보고 있는 것에 대해 설명해 줘'라고 말로 대화해 보세요.",
+                    "나만의 멋진 노래 만들기! 제미나이에게 '나의 60대 청춘을 응원하는 신나는 트로트 가사를 써주고, 어떤 기분으로 부르면 좋을지 작곡 아이디어도 내줘'라고 부탁해 보세요.",
+                    "마지막으로 제미나이에게 '오늘 너 덕분에 인공지능 공부 아주 재밌게 잘했어, 정말 똑똑하네 고마워!'라고 인사하고 훈훈하게 마무리해 보세요."
+                ]
+            },
+            // 형, 여기가 새로 추가된 10번째 과목 VLLO 미션 25개야!
+            {
+                id: 9,
+                title: "제 11과목: 갤럭시 AI",
+                subtitle: "내 폰의 숨겨진 인공지능 비서",
+                icon: "🪄",
+                missions: [
+                    "먼저 내 폰의 지능을 확인합시다! [설정]-[휴대전화 정보]-[소프트웨어 정보]에서 'One UI 버전'이 6.1 이상인지 확인해 보세요.",
+                    "버전이 낮다면 [설정]-[소프트웨어 업데이트]에서 '다운로드 및 설치'를 눌러 최신 AI 기능을 쓸 준비를 마쳐보세요.",
+                    "준비 완료! 이제 화면 맨 아래 가운데 홈 버튼(◯)을 3초 정도 길게 꾹~ 눌러서 '서클 투 서치' 기능을 깨워보세요.",
+                    "화면이 살짝 어두워졌나요? 이제 궁금한 꽃이나 물건 사진 위에 손가락으로 동그라미를 쓱 그려서 바로 검색해 보세요.",
+                    "드라마 보다가 예쁜 가방이 나오면 사진을 찍고, 서클 투 서치로 어디서 파는 물건인지 AI에게 물어보세요.",
+                    "이웃집 강아지가 너무 귀여운데 무슨 종일까요? 강아지 사진에 동그라미를 쳐서 종 이름과 특징을 찾아보세요.",
+                    "길 가다 본 신기한 과일 이름이 궁금할 때도 서클 투 서치를 이용해 이름과 맛을 1초 만에 알아내 보세요.",
+                    "명함이나 영수증을 찍고 갤러리에서 연 뒤, 오른쪽 아래 알파벳 [T] 버튼을 눌러 글자를 인식시켜 보세요.",
+                    "사진 속 글자가 하얗게 변하면 [모두 복사]를 눌러서 긴 전화번호나 계좌번호를 내 폰에 쏙 저장해 보세요.",
+                    "복사한 글자를 [노트에 추가] 버튼을 눌러 삼성 노트 앱으로 한 번에 깔끔하게 옮겨보세요.",
+                    "전체 말고 계좌번호만 필요하다면, 원하는 글자를 꾹 눌러 물방울 모양으로 영역을 잡아 '부분 복사'를 해보세요.",
+                    "방금 복사한 번호를 짝꿍 카톡방에 [붙여넣기] 해서 '이 번호로 용돈 보내줘~'라고 장난쳐 보세요.",
+                    "사진에 내 그림자가 져서 보기 싫을 때! 갤러리 편집(연필) - 점 4개 메뉴에서 [AI 지우개]를 눌러보세요.",
+                    "AI 지우개 안에서 [그림자 지우기] 버튼을 딱 누르면, 어두웠던 그림자가 마법처럼 사라지는 걸 감상해 보세요.",
+                    "안경이나 유리창에 비친 전등 불빛이 거슬린다면 [빛 반사 지우기]를 눌러 사진을 깨끗하게 닦아보세요.",
+                    "지우기가 끝났다면 우측 상단 점 3개를 누르고 [다른 파일로 저장]을 눌러 원본은 남겨두고 새 사진을 만드세요.",
+                    "한 번에 안 지워진다면 당황하지 말고 AI 지우개를 한 번 더 반복해서 점점 더 깨끗해지는 걸 확인해 보세요.",
+                    "이제 사물을 옮겨봅시다! 사진 아래 [반짝이는 별 모양] 아이콘을 눌러 '생성형 편집'을 시작해 보세요.",
+                    "사진 속 꽃병이나 사람을 손가락으로 대충 둘러싼 뒤, 꾹 눌러서 다른 위치로 쓱 끌당겨 옮겨보세요.",
+                    "지우고 싶은 사물을 선택하고 [지우개(휴지통)] 아이콘을 눌러서 사진에서 완전히 증발시켜 보세요.",
+                    "사물을 옮기거나 지운 빈자리를 AI가 채워주도록 아래쪽 [생성] 버튼을 누르고 잠시 기다려보세요.",
+                    "눈이 침침해 작은 글씨가 안 보일 때! 약 봉투나 설명서를 찍고 갤러리 상단의 [눈 모양(빅스비 비전)]을 누르세요.",
+                    "빅스비 비전 메뉴를 오른쪽 끝까지 쭉~ 밀어서 [글자 읽어주기]를 선택해 보세요.",
+                    "AI가 또박또박한 목소리로 작은 글씨를 대신 읽어주는 걸 귀 기울여 들어보세요.",
+                    "마지막으로 짝꿍에게 '내 폰은 이제 천재다!'라고 자랑하며 신기한 갤럭시 AI 공부를 즐겁게 마무리해 보세요!"
+                ]
+            },
+            {
+                id: 10,
+                title: "제 12과목: 나도 이제 영화감독",
+                subtitle: "VLLO 앱으로 영상 만들기",
+                icon: "🎬",
+                missions: [
+                    "영상 편집의 시작! VLLO 앱을 열고 화면 아래에 있는 동그란 '새 프로젝트' 버튼을 당당하게 꾹 눌러보세요.",
+                    "내 폰의 사진첩이 열리면 위쪽 '모든 미디어' 옆 화살표(▼)를 눌러 내 앨범을 찾기 쉽게 정리해 보세요.",
+                    "앨범에서 가장 마음에 드는 손주나 꽃 사진 5장을 순서대로 콕콕 찔러서 선택해 보세요.",
+                    "사진을 다 골랐다면 오른쪽 아래 빨간색 화살표(다음 단계) 버튼을 살포시 눌러주세요.",
+                    "유튜브에 올릴 멋진 영상을 위해 화면 비율을 가로로 넓은 '16:9'로 선택해 보세요.",
+                    "화면을 위로 살짝 올려 영상 배치는 화면에 꽉 차게 '채움'으로 선택해 보세요.",
+                    "사진 한 장당 보여주는 시간(사진 길이)을 넉넉하게 '10초'로 설정해 보세요.",
+                    "설정이 다 끝났으면 아래쪽 붉은색 '프로젝트 생성하기' 버튼을 꾹 눌러 작업창을 열어보세요.",
+                    "위쪽 재생창(미리보기)에서 사진이 너무 커서 잘렸다면, 두 손가락으로 사진을 오므려 크기를 예쁘게 맞춰보세요.",
+                    "작업창에 있는 세로로 된 '파란선(재생 헤드)'을 좌우로 스윽스윽 밀면서 사진이 잘 넘어가나 구경해 보세요.",
+                    "영상에 내 목소리(자막)를 넣기 위해 화면 맨 아래쪽 메뉴에서 '글자' 버튼을 터치해 보세요.",
+                    "왼쪽 메뉴에 나타난 '글자'를 한 번 더 누르고, 마음에 드는 글자 스타일(예: 뚜렷이 보이는 기본 폰트)을 골라보세요.",
+                    "위쪽 화면에 글자가 나타나면 그 부분을 '두 번 연속 다닥(더블 탭)' 눌러서 글쓰기 창을 띄워보세요.",
+                    "자판 치기 힘들 땐 마이크! 글쓰기 창에서 스마트폰 마이크 버튼을 눌러 '우리가족 사랑해'라고 말로 입력해 보세요.",
+                    "글자를 다 썼다면 오른쪽 체크(✔) 표시를 누르고, 글자를 손가락으로 드래그해 잘 보이는 곳으로 옮겨보세요.",
+                    "똑똑한 인공지능 성우를 불러봅시다! 맨 아래 메뉴에서 '오디오'를 누르고 왼쪽의 'AI 보이스'를 선택해 보세요.",
+                    "나타난 여러 남녀 성우 목소리를 하나씩 눌러 들어보고 가장 마음에 드는 낭랑한 목소리를 골라보세요.",
+                    "대본 입력창에 '오늘도 행복한 하루 보내세요'라고 입력하고 '생성하기'를 눌러 성우가 읽어주게 만들어보세요.",
+                    "영상에 감미로운 음악을 깔아볼까요? 아래쪽 메뉴에서 '오디오'를 누르고 '배경음악'을 터치해 보세요.",
+                    "VLLO 앱에 저장된 수많은 무료 음악 중 가장 신나는 음악을 하나 골라 체크(✔) 표시를 눌러 적용해 보세요.",
+                    "음악 소리가 내 목소리(자막)보다 너무 크면 안 되죠! 하단 메뉴에서 '음량'을 찾아 소리를 반으로 줄여보세요.",
+                    "내 폰에 있는 '임영웅' 노래를 넣고 싶다면, 배경음악 메뉴 상단의 '내 파일'을 누르고 1분짜리 광고를 느긋하게 시청해 보세요.",
+                    "작업창의 파란선을 움직이면서 위쪽 재생(▶) 버튼을 눌러 내가 만든 영상이 잘 나오는지 전체적으로 감상해 보세요.",
+                    "드디어 완성! 영상을 내 폰에 저장하기 위해 우측 상단에 있는 빨간색 '추출하기' 버튼을 꾹 눌러보세요.",
+                    "(가장 중요!) 추출 중 나오는 광고에 놀라 끄지 마시고, 1분 정도 느긋하게 기다렸다가 'X(닫기)'를 눌러 내 갤러리에 영상을 무사히 저장해 보세요!"
+                ]
+            }
+        ];
+
+        let state = {
+            completed: new Set(),
+            currentCategory: null,
+            totalMissions: 327, // 282 + 45 = 327
+            userId: null,
+            currentStudentId: null,
+            currentStudentName: null,
+            currentStudents: [],
+            currentMissionIndex: 0 // 현재 문제 위치 저장용
+        };
+
+        let totalChartInstance = null;
+        let categoryChartInstance = null;
+        let studentsUnsubscribe = null;
+
+        const sheetUrls = {
+            '1팀': 'https://docs.google.com/spreadsheets/d/1xnKOOPcsTDsrxcXydxxEg3KO4hPJFyYkKmg749rZcv8/export?format=csv&gid=684276747',
+            '2팀': 'https://docs.google.com/spreadsheets/d/1xnKOOPcsTDsrxcXydxxEg3KO4hPJFyYkKmg749rZcv8/export?format=csv&gid=908458461',
+            '3팀': 'https://docs.google.com/spreadsheets/d/1xnKOOPcsTDsrxcXydxxEg3KO4hPJFyYkKmg749rZcv8/export?format=csv&gid=55984324'
+        };
+
+        // 커스텀 팝업(모달) 함수
+        function showModal(title, message, isConfirm = false, onConfirm = null) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').innerHTML = message;
+            const modal = document.getElementById('custom-modal');
+            const btnCancel = document.getElementById('modal-btn-cancel');
+            const btnConfirm = document.getElementById('modal-btn-confirm');
+
+            if (isConfirm) {
+                btnCancel.classList.remove('hidden');
+                btnCancel.onclick = () => modal.classList.remove('show');
+                btnConfirm.onclick = () => {
+                    modal.classList.remove('show');
+                    if (onConfirm) onConfirm();
+                };
+            } else {
+                btnCancel.classList.add('hidden');
+                btnConfirm.onclick = () => modal.classList.remove('show');
+            }
+            modal.classList.add('show');
+        }
+
+        function showAlert(msg) { showModal('알림', msg); }
+        function showConfirm(msg, callback) { showModal('확인', msg, true, callback); }
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let firebaseApp, auth, db;
+        const appId = 'smartphone-quiz';
+        let useFirebase = false;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLy38Zi2RS9begQnxNEfv9QgCgD1q1gm8",
+            authDomain: "smartphone-quiz-1adee.firebaseapp.com",
+            projectId: "smartphone-quiz-1adee",
+            storageBucket: "smartphone-quiz-1adee.firebasestorage.app",
+            messagingSenderId: "361651686147",
+            appId: "1:361651686147:web:f5ffca258fdae56f65b736"
+        };
+
+        function setupFirebase() {
+            try {
+                firebaseApp = initializeApp(firebaseConfig);
+                auth = getAuth(firebaseApp);
+                db = getFirestore(firebaseApp);
+                useFirebase = true;
+                return true;
+            } catch (error) {
+                console.error("Firebase 초기화 에러:", error);
+                useFirebase = false;
+                return false;
+            }
+        }
+
+        async function initApp() {
+            setupFirebase();
+
+            document.getElementById('btn-fetch-sheets').addEventListener('click', fetchStudentsFromSheets);
+            document.getElementById('sync-team-select').addEventListener('change', loadTeachersList);
+
+            // 스마트폰 터치 스와이프(좌우 넘기기) 이벤트 추가
+            const missionView = document.getElementById('view-missions');
+            let touchStartX = 0;
+            let touchStartY = 0;
+
+            missionView.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            missionView.addEventListener('touchend', (e) => {
+                // 미션 화면이 활성화된 상태에서만 작동
+                if (!missionView.classList.contains('active')) return;
+                
+                const touchEndX = e.changedTouches[0].screenX;
+                const touchEndY = e.changedTouches[0].screenY;
+                const deltaX = touchEndX - touchStartX;
+                const deltaY = touchEndY - touchStartY;
+                
+                // 수직(위아래) 스크롤보다 수평(좌우) 스와이프가 더 크고, 이동 거리가 50px 이상일 때만 판정
+                if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+                    if (deltaX < 0) {
+                        nextMission(); // 왼쪽으로 밀면 -> 다음 문제
+                    } else {
+                        prevMission(); // 오른쪽으로 밀면 -> 이전 문제
+                    }
+                }
+            }, { passive: true });
+
+            if (useFirebase) {
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        state.userId = user.uid;
+                        loadStudents(); // DB 로딩
+                    } else {
+                        signInAnonymously(auth).catch(e => {
+                            console.error("익명 로그인 실패:", e);
+                            useFirebase = false;
+                            loadLocalStudents(); // 에러 시 로컬 모드
+                        });
+                    }
+                });
+            } else {
+                loadLocalStudents();
+            }
+
+            // 캐시된 팀/선생님 정보 복구
+            const cachedTeam = localStorage.getItem('sm_gym_last_team');
+            if (cachedTeam) {
+                document.getElementById('sync-team-select').value = cachedTeam;
+            }
+            await loadTeachersList(); 
+        }
+
+        function loadLocalStudents() {
+            const saved = localStorage.getItem('sm_gym_students_local');
+            if(saved) {
+                state.currentStudents = JSON.parse(saved);
+            }
+            renderStudentList(state.currentStudents);
+        }
+
+        function saveStudentsLocal() {
+            localStorage.setItem('sm_gym_students_local', JSON.stringify(state.currentStudents));
+        }
+
+        async function loadTeachersList() {
+            const selectedTeam = document.getElementById('sync-team-select').value;
+            const selectTeacher = document.getElementById('sync-teacher-select');
+            
+            // 캐시된 선생님 데이터 확인
+            const cachedTeachersKey = `sm_gym_teachers_${selectedTeam}`;
+            const cachedTeachers = localStorage.getItem(cachedTeachersKey);
+            
+            if (cachedTeachers) {
+                populateTeacherDropdown(JSON.parse(cachedTeachers));
+            } else {
+                selectTeacher.innerHTML = '<option value="">선생님 선택</option>';
+            }
+
+            if (!sheetUrls[selectedTeam]) return;
+
+            try {
+                const res = await fetch(`${sheetUrls[selectedTeam]}&t=${Date.now()}`);
+                if (!res.ok) throw new Error('네트워크 응답 오류');
+                const text = await res.text();
+                
+                const teachers = extractTeachers(text);
+                localStorage.setItem(cachedTeachersKey, JSON.stringify(teachers));
+                populateTeacherDropdown(teachers);
+            } catch (e) {
+                console.error("선생님 명단 불러오기 실패", e);
+            }
+        }
+
+        function populateTeacherDropdown(teachersArray) {
+            const selectTeacher = document.getElementById('sync-teacher-select');
+            selectTeacher.innerHTML = '<option value="">선생님 선택</option>';
+            teachersArray.forEach(teacher => {
+                const opt = document.createElement('option');
+                opt.value = teacher;
+                opt.textContent = teacher;
+                selectTeacher.appendChild(opt);
+            });
+            
+            // 캐시된 선택된 선생님 복구
+            const cachedTeacher = localStorage.getItem('sm_gym_last_teacher');
+            if(cachedTeacher && teachersArray.includes(cachedTeacher)) {
+                selectTeacher.value = cachedTeacher;
+            }
+        }
+
+        function extractTeachers(text) {
+            const results = Papa.parse(text, { header: false, skipEmptyLines: true });
+            const data = results.data;
+            let headerRowIndex = -1;
+
+            for (let i = 0; i < Math.min(10, data.length); i++) {
+                if (data[i] && data[i].length > 3 && data[i][3] && data[i][3].replace(/\s+/g, '') === "구분") {
+                    headerRowIndex = i; break;
+                }
+            }
+            if (headerRowIndex === -1) return [];
+
+            const namesList = []; // 순서 유지를 위해 Array 사용
+            for (let i = headerRowIndex + 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length < 2) continue;
+                let teacherName = row[1] ? row[1].trim() : '';
+                if (teacherName !== '' && teacherName !== '강사명' && teacherName !== '-' && isNaN(teacherName)) {
+                    if(!namesList.includes(teacherName)) {
+                        namesList.push(teacherName);
+                    }
+                }
+            }
+            return namesList;
+        }
+
+        function loadStudents() {
+            if (!state.userId || !useFirebase) return;
+            const studentsRef = collection(db, 'artifacts', appId, 'users', state.userId, 'students');
+            
+            studentsUnsubscribe = onSnapshot(studentsRef, (snapshot) => {
+                let students = [];
+                snapshot.forEach(doc => { students.push({ id: doc.id, ...doc.data() }); });
+                state.currentStudents = students;
+                renderStudentList(students);
+                saveStudentsLocal(); // 백업용 저장
+            }, (error) => {
+                console.error("데이터 불러오기 실패:", error);
+                loadLocalStudents();
+            });
+        }
+
+        function renderStudentList(students) {
+            const container = document.getElementById('student-list-container');
+            const loading = document.getElementById('loading-students');
+            container.innerHTML = '';
+            loading.style.display = 'none';
+
+            if (!students || students.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500 text-lg">등록된 어르신이 없습니다. 학생 이름을 읽어오세요.</div>';
+                return;
+            }
+
+            const selectedTeam = document.getElementById('sync-team-select').value || localStorage.getItem('sm_gym_last_team');
+            const selectedTeacher = document.getElementById('sync-teacher-select').value || localStorage.getItem('sm_gym_last_teacher');
+
+            let filteredStudents = students.filter(s => s.team === selectedTeam && !s.name.endsWith('날') && !s.name.endsWith('절'));
+            
+            // 이름순 정렬
+            filteredStudents.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+            filteredStudents.forEach(student => {
+                const completedCount = student.completed ? student.completed.length : 0;
+                const percent = Math.round((completedCount / state.totalMissions) * 100);
+
+                const card = document.createElement('div');
+                // 다크 모드에 어울리는 카드 스타일
+                card.className = "bg-slate-800 p-3 sm:p-4 rounded-xl shadow-lg border border-slate-700 cursor-pointer hover:border-orange-500 hover:shadow-orange-500/10 transition-all flex flex-col justify-between items-center group relative min-h-[5rem] gap-2";
+                
+                card.innerHTML = `
+                    <div class="w-full text-center truncate">
+                        <h4 class="text-xl sm:text-3xl font-bold text-slate-100 group-hover:text-orange-500 transition-colors truncate">${student.name} 님</h4>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 w-full">
+                        <div class="w-10 h-10 rounded-full border-[3px] border-slate-700 flex items-center justify-center font-bold text-orange-500 bg-slate-900 text-xs shrink-0">
+                            ${percent}%
+                        </div>
+                        <button type="button" class="delete-btn w-10 h-10 rounded-full bg-red-900/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center border border-red-900/30 shrink-0" title="삭제">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => selectStudent(student));
+                
+                const deleteBtn = card.querySelector('.delete-btn');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    deleteStudent(student.id, student.name);
+                });
+                
+                container.appendChild(card);
+            });
+            
+            if(filteredStudents.length === 0) {
+                 container.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500 text-lg">선택한 팀의 어르신 명단이 없습니다.</div>';
+            }
+        }
+
+        async function fetchStudentsFromSheets() {
+            const selectedTeam = document.getElementById('sync-team-select').value;
+            const selectedTeacher = document.getElementById('sync-teacher-select').value; 
+            
+            if(!selectedTeacher) {
+                showAlert("선생님을 먼저 선택해주세요."); return;
+            }
+
+            // 선택 기억
+            localStorage.setItem('sm_gym_last_team', selectedTeam);
+            localStorage.setItem('sm_gym_last_teacher', selectedTeacher);
+            
+            const btn = document.getElementById('btn-fetch-sheets');
+            const loadingDiv = document.getElementById('sheets-loading');
+            
+            btn.style.display = 'none';
+            loadingDiv.classList.remove('hidden');
+
+            // 브라우저 렌더링 양보
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            let totalAdded = 0;
+            
+            try {
+                const res = await fetch(`${sheetUrls[selectedTeam]}&t=${Date.now()}`);
+                if (!res.ok) throw new Error('네트워크 응답 오류');
+                const text = await res.text();
+                
+                if (text.trim().toLowerCase().startsWith("<!doctype html")) {
+                    throw new Error("AUTH_ERROR");
+                }
+                
+                const names = extractStudents(text, selectedTeacher);
+                
+                const enrollPromises = [];
+                const currentStudentKeys = new Set(state.currentStudents.map(s => `${s.team}_${s.name}`));
+
+                for (const name of names) {
+                    const cleanName = name.trim();
+                    const key = `${selectedTeam}_${cleanName}`;
+                    
+                    if (!currentStudentKeys.has(key)) {
+                        currentStudentKeys.add(key);
+                        
+                        const studentId = 'student_' + Date.now() + Math.floor(Math.random() * 1000000);
+                        const newStudent = {
+                            name: cleanName, team: selectedTeam, completed: [], 
+                            createdAt: Date.now(), updatedAt: Date.now()
+                        };
+                        
+                        if(useFirebase && state.userId) {
+                            const studentRef = doc(db, 'artifacts', appId, 'users', state.userId, 'students', studentId);
+                            enrollPromises.push(setDoc(studentRef, newStudent));
+                        } else {
+                            newStudent.id = studentId;
+                            state.currentStudents.push(newStudent);
+                            saveStudentsLocal();
+                        }
+                        totalAdded++;
+                    }
+                }
+
+                if (useFirebase && enrollPromises.length > 0) {
+                    await Promise.all(enrollPromises);
+                }
+
+            } catch (e) {
+                console.error("명단 불러오기 실패", e);
+                if (e.message === "AUTH_ERROR") {
+                    showAlert(`⚠️ 구글 시트 접근 권한이 차단되었습니다.\n'링크가 있는 모든 사용자'로 공유 설정해주세요.`);
+                } else {
+                    showAlert("네트워크 오류로 명단을 가져오지 못했습니다.");
+                }
+            } finally {
+                loadingDiv.classList.add('hidden');
+                btn.style.display = 'flex';
+                
+                if(!useFirebase) renderStudentList(state.currentStudents);
+                
+                showAlert(`[${selectedTeam}] '${selectedTeacher}' 선생님 반\n학생 이름 읽기 완료!\n새로운 어르신 ${totalAdded}명이 추가되었습니다.`);
+            }
+        }
+
+        function extractStudents(text, filterTeacher) {
+            const results = Papa.parse(text, { header: false, skipEmptyLines: true });
+            const data = results.data;
+            let headerRowIndex = -1;
+            
+            for (let i = 0; i < Math.min(10, data.length); i++) {
+                if (data[i] && data[i].length > 3 && data[i][3] && data[i][3].replace(/\s+/g, '') === "구분") {
+                    headerRowIndex = i; break;
+                }
+            }
+            if (headerRowIndex === -1) return [];
+
+            const headerRow = data[headerRowIndex];
+            const validColIndices = [];
+            
+            // 오늘 기준으로 30일(과거 한 달) 이내만
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setDate(today.getDate() - 30);
+            oneMonthAgo.setHours(0, 0, 0, 0);
+
+            for (let j = 4; j < headerRow.length; j++) {
+                if (headerRow[j] && headerRow[j].trim() !== '') {
+                    const match = headerRow[j].trim().match(/(\d+)\s*[/.]\s*(\d+)/);
+                    if (match) {
+                        let currentYear = today.getFullYear();
+                        let d = new Date(currentYear, parseInt(match[1]) - 1, parseInt(match[2]));
+                        if (d > today) d.setFullYear(currentYear - 1); // 작년 데이터 처리
+                        
+                        if (d >= oneMonthAgo && d <= today) {
+                            validColIndices.push(j);
+                        }
+                    }
+                }
+            }
+
+            const namesSet = new Set();
+            const teacherGroups = new Map();
+            let currentTeacherName = "";
+
+            for (let i = headerRowIndex + 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length < 2) continue;
+                if (row[1] && row[1].trim() !== '') {
+                    currentTeacherName = row[1].trim();
+                }
+                if (currentTeacherName) {
+                    if (!teacherGroups.has(currentTeacherName)) teacherGroups.set(currentTeacherName, []);
+                    teacherGroups.get(currentTeacherName).push(row);
+                }
+            }
+
+            teacherGroups.forEach((rows, teacherName) => {
+                if (filterTeacher && teacherName !== filterTeacher) return;
+
+                const locationRow = rows.find(r => {
+                    const cat = (r.length > 3 && r[3]) ? r[3].replace(/\s+/g, '') : '';
+                    return cat === "장소";
+                });
+
+                rows.forEach((row, rowIndex) => {
+                    const category = (row.length > 3 && row[3]) ? row[3].replace(/\s+/g, '') : '';
+                    const isNewTeacherBlock = (rowIndex === 0 && row[1] && row[1].trim() !== '');
+                    const isTargetRow = category === "대상" || category === "내용" || category === "활동" || (isNewTeacherBlock && category !== "장소" && !category.includes("진행여부"));
+
+                    if (isTargetRow) {
+                        validColIndices.forEach(colIdx => {
+                            // 수업장소 제외 키워드 체크
+                            if (locationRow && locationRow.length > colIdx && locationRow[colIdx]) {
+                                const locVal = locationRow[colIdx].trim();
+                                if (['공휴일', '소양교육', '대체휴일', '대체공휴일'].some(kw => locVal.includes(kw))) return;
+                            }
+
+                            const cellVal = (row.length > colIdx && row[colIdx]) ? row[colIdx].trim() : "";
+                            if (!cellVal || cellVal === '-' || cellVal.includes('대상자 없음')) return;
+
+                            let cleanTarget = cellVal.replace(/대상자\s*없음/g, '-').replace(/대상자\s*발굴/g, '대상자발굴');
+                            const names = cleanTarget.split(/[/, \n()]+/).filter(n => n.trim().length > 0 && n !== '-');
+
+                            names.forEach(name => {
+                                let cleanName = name.replace(/\s+/g, '');
+                                if (['대상자발굴', '수업준비', '복지관이동', '복지관으로이동', '이동시간', '자체학습', '보조강사', '학습', '대상자', '대상자없음', '오전수업', '컴1/보조', '컴기초1반', '컴활용/보조', '기초', '도선복지관', '경로당', '성원'].some(kw => cleanName.includes(kw)) || cleanName.endsWith('날') || cleanName.endsWith('절')) return;
+                                if (cleanName.length >= 2 && isNaN(cleanName)) {
+                                    namesSet.add(cleanName);
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+            return Array.from(namesSet);
+        }
+
+        async function deleteStudent(studentId, studentName) {
+            showConfirm(`'${studentName}' 어르신의 진행 내역을 완전히 삭제할까요?`, async () => {
+                if(useFirebase && state.userId) {
+                    const studentRef = doc(db, 'artifacts', appId, 'users', state.userId, 'students', studentId);
+                    await deleteDoc(studentRef);
+                } else {
+                    state.currentStudents = state.currentStudents.filter(s => s.id !== studentId);
+                    saveStudentsLocal();
+                    renderStudentList(state.currentStudents);
+                }
+            });
+        }
+
+        function selectStudent(student) {
+            state.currentStudentId = student.id;
+            state.currentStudentName = student.name;
+            state.completed = new Set(student.completed || []);
+            
+            document.getElementById('display-name').textContent = student.name + ' 님';
+            document.getElementById('header-user-info').classList.remove('hidden');
+            
+            document.getElementById('view-teacher').classList.remove('active');
+            document.getElementById('view-dashboard').classList.add('active');
+            
+            renderCategoryGrid();
+            updateDashboardCharts();
+            window.scrollTo(0, 0);
+        }
+
+        function goToTeacherDashboard() {
+            state.currentStudentId = null;
+            state.currentStudentName = null;
+            state.completed = new Set();
+            
+            document.getElementById('header-user-info').classList.add('hidden');
+            
+            document.getElementById('view-missions').classList.remove('active');
+            document.getElementById('view-dashboard').classList.remove('active');
+            document.getElementById('view-teacher').classList.add('active');
+            
+            renderStudentList(state.currentStudents); 
+            window.scrollTo(0, 0);
+        }
+
+        function renderCategoryGrid() {
+            const grid = document.getElementById('category-grid');
+            grid.innerHTML = '';
+            
+            quizData.forEach((category) => {
+                const totalInCategory = category.missions.length;
+                let completedInCategory = 0;
+                category.missions.forEach((_, idx) => {
+                    if (state.completed.has(`${category.id}-${idx}`)) completedInCategory++;
+                });
+                const percent = Math.round((completedInCategory / totalInCategory) * 100);
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-700 cursor-pointer hover:bg-slate-700 hover:border-orange-500 transition-all transform hover:-translate-y-1 text-center flex flex-col justify-between h-full";
+                card.onclick = () => showCategoryMissions(category.id);
+                
+                card.innerHTML = `
+                    <div class="flex flex-col items-center justify-center flex-1">
+                        <div class="text-3xl sm:text-4xl mb-2 sm:mb-3 drop-shadow-md">${category.icon}</div>
+                        <h4 class="text-base sm:text-lg lg:text-xl font-bold text-slate-100 mb-1 leading-tight">${category.title.split(':')[0]}</h4>
+                        <p class="text-xs sm:text-sm lg:text-base text-slate-400 mb-3 sm:mb-4 font-medium truncate w-full">${category.subtitle}</p>
+                    </div>
+                    <div class="w-full mt-auto">
+                        <div class="w-full bg-slate-900 rounded-full h-2 sm:h-3 mb-1.5 sm:mb-2 overflow-hidden border border-slate-700">
+                            <div class="bg-orange-500 h-2 sm:h-3 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" style="width: ${percent}%"></div>
+                        </div>
+                        <div class="text-[10px] sm:text-xs lg:text-sm font-bold text-slate-500">${completedInCategory} / ${totalInCategory} 달성</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // --- 데이터 저장 통합 함수 ---
+        async function saveProgress() {
+            if (!state.currentStudentId) return;
+            
+            const completedArray = Array.from(state.completed);
+            
+            if (useFirebase && state.userId) {
+                try {
+                    const studentRef = doc(db, 'artifacts', appId, 'users', state.userId, 'students', state.currentStudentId);
+                    await setDoc(studentRef, { 
+                        completed: completedArray, 
+                        updatedAt: Date.now() 
+                    }, { merge: true });
+                } catch (e) {
+                    console.error("Firebase 저장 실패:", e);
+                }
+            } else {
+                const sIdx = state.currentStudents.findIndex(s => s.id === state.currentStudentId);
+                if (sIdx > -1) {
+                    state.currentStudents[sIdx].completed = completedArray;
+                    state.currentStudents[sIdx].updatedAt = Date.now();
+                    saveStudentsLocal();
+                }
+            }
+        }
+
+        function showCategoryMissions(categoryId) {
+            const category = quizData.find(c => c.id === categoryId);
+            state.currentCategory = categoryId;
+            
+            if (category.isGame) {
+                // 게임 뷰로 이동
+                document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+                document.getElementById('view-keyboard-game').classList.add('active');
+                initKeyboardGame();
+            } else {
+                state.currentMissionIndex = 0;
+                document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+                document.getElementById('view-missions').classList.add('active');
+                
+                document.getElementById('mission-category-title').textContent = `${category.icon} ${category.title}`;
+                renderMissionCard(category);
+                updateCategoryProgressBadge(category);
+            }
+            window.scrollTo(0, 0);
+        }
+
+        // --- 키보드 게임 (손가락 놀이터) 로직 ---
+        let gameIdx = 0;
+        let isGameTransitioning = false;
+
+        function initKeyboardGame() {
+            gameIdx = 0;
+            const category = quizData.find(c => c.id === state.currentCategory);
+            // 이전에 했던 곳부터 시작
+            for (let i = 0; i < category.missions.length; i++) {
+                if (!state.completed.has(`${category.id}-${i}`)) {
+                    gameIdx = i;
+                    break;
+                }
+            }
+            updateGameDisplay();
+        }
+
+        function updateGameDisplay() {
+            const category = quizData.find(c => c.id === state.currentCategory);
+            const currentWord = category.missions[gameIdx];
+            
+            document.getElementById('game-target-word').innerText = currentWord;
+            document.getElementById('current-step').innerText = gameIdx + 1;
+            
+            const progress = ((gameIdx + 1) / category.missions.length) * 100;
+            document.getElementById('game-progress-fill').style.width = `${progress}%`;
+            updateGameProgressBadge();
+
+            const levelTitle = document.getElementById('level-title');
+            const categoryTag = document.getElementById('game-category-tag');
+            if (gameIdx < 15) {
+                levelTitle.innerText = "1단계: 쉬운 한글";
+                categoryTag.innerText = "초급 연습";
+                categoryTag.className = "inline-block mx-auto px-4 py-1 rounded-full text-xs font-bold mb-6 bg-blue-900/30 text-blue-400 border border-blue-900/50";
+            } else if (gameIdx < 30) {
+                levelTitle.innerText = "2단계: 숫자와 기호";
+                categoryTag.innerText = "중급 연습";
+                categoryTag.className = "inline-block mx-auto px-4 py-1 rounded-full text-xs font-bold mb-6 bg-green-900/30 text-green-400 border border-green-900/50";
+            } else {
+                levelTitle.innerText = "3단계: 문장과 특수문자";
+                categoryTag.innerText = "고급 연습";
+                categoryTag.className = "inline-block mx-auto px-4 py-1 rounded-full text-xs font-bold mb-6 bg-purple-900/30 text-purple-400 border border-purple-900/50";
+            }
+
+            const oldInput = document.getElementById('game-user-input');
+            const newInput = document.createElement('input');
+            newInput.type = "text";
+            newInput.id = "game-user-input";
+            newInput.className = oldInput.className;
+            newInput.placeholder = "똑같이 써보세요";
+            newInput.autocomplete = "off";
+            newInput.addEventListener('input', handleGameInput);
+            oldInput.parentNode.replaceChild(newInput, oldInput);
+            
+            setTimeout(() => { newInput.focus(); }, 100);
+            
+            const targetDisplay = document.getElementById('game-target-word');
+            targetDisplay.classList.remove('text-5xl', 'text-6xl', 'text-3xl');
+            if (currentWord.length > 8) {
+                targetDisplay.classList.add('text-3xl');
+            } else {
+                targetDisplay.classList.add('text-5xl');
+                if (window.innerWidth > 640) targetDisplay.classList.add('sm:text-6xl');
+            }
+        }
+
+        function handleGameInput(e) {
+            if (isGameTransitioning) return;
+            const val = e.target.value;
+            const category = quizData.find(c => c.id === state.currentCategory);
+            const target = category.missions[gameIdx];
+            const feedbackMsg = document.getElementById('game-feedback-msg');
+            const gameCard = document.getElementById('game-card');
+
+            if (val === target) {
+                isGameTransitioning = true;
+                vibrate(50);
+                feedbackMsg.innerText = "참 잘하셨어요! 다음 문제~";
+                feedbackMsg.className = "h-6 text-sm font-bold text-green-400";
+                gameCard.classList.add('correct-flash');
+                
+                const missionId = `${category.id}-${gameIdx}`;
+                if (!state.completed.has(missionId)) {
+                    state.completed.add(missionId);
+                    triggerConfetti();
+                    saveProgress();
+                }
+
+                setTimeout(() => {
+                    gameCard.classList.remove('correct-flash');
+                    if (gameIdx < category.missions.length - 1) {
+                        gameIdx++;
+                        updateGameDisplay();
+                        setTimeout(() => { isGameTransitioning = false; }, 50);
+                    } else {
+                        showModal("🎉 축하합니다!", "45개 모든 문제를 정복하셨어요!<br>이제 스마트폰 박사님이시네요!", false, () => {
+                            app.goBack();
+                        });
+                        isGameTransitioning = false;
+                    }
+                }, 600);
+            } else if (target.startsWith(val)) {
+                feedbackMsg.innerText = "좋아요, 계속 써보세요!";
+                feedbackMsg.className = "h-6 text-sm font-bold text-blue-400";
+            } else {
+                if (val.length > 0) {
+                    feedbackMsg.innerText = "글자가 달라요. 지우고 다시 써보세요.";
+                    feedbackMsg.className = "h-6 text-sm font-bold text-rose-400";
+                }
+            }
+        }
+
+        function updateGameProgressBadge() {
+            const category = quizData.find(c => c.id === state.currentCategory);
+            let comp = 0;
+            category.missions.forEach((_, idx) => {
+                if (state.completed.has(`${category.id}-${idx}`)) comp++;
+            });
+            document.getElementById('game-progress-badge').textContent = `${comp} / ${category.missions.length} 완료`;
+        }
+
+        function prevGameStep() {
+            if (gameIdx > 0) {
+                gameIdx--;
+                updateGameDisplay();
+            }
+        }
+
+        function resetGame() {
+            showConfirm("정말 처음부터 다시 연습하시겠습니까?", () => {
+                const category = quizData.find(c => c.id === state.currentCategory);
+                category.missions.forEach((_, idx) => {
+                    state.completed.delete(`${category.id}-${idx}`);
+                });
+                gameIdx = 0;
+                updateGameDisplay();
+                saveProgress();
+            });
+        }
+
+        function jumpToLevel(level) {
+            vibrate(30);
+            if (level === '초급') gameIdx = 0;
+            else if (level === '중급') gameIdx = 15;
+            else if (level === '고급') gameIdx = 30;
+            
+            isGameTransitioning = false;
+            updateGameDisplay();
+        }
+
+        function goBack() {
+            state.currentCategory = null;
+            document.getElementById('view-missions').classList.remove('active');
+            document.getElementById('view-dashboard').classList.add('active');
+            
+            renderCategoryGrid();
+            updateDashboardCharts();
+            window.scrollTo(0, 0);
+        }
+
+        // 꽉 차는 한 장씩 보기 카드 렌더링
+        function renderMissionCard(category) {
+            const list = document.getElementById('mission-list');
+            list.innerHTML = ''; 
+            
+            const idx = state.currentMissionIndex;
+            const missionText = category.missions[idx];
+            const missionId = `${category.id}-${idx}`;
+            const isCompleted = state.completed.has(missionId);
+            
+            const card = document.createElement('div');
+            card.className = `mission-card p-6 sm:p-10 rounded-3xl flex flex-col items-center justify-center text-center w-full shadow-2xl ${isCompleted ? 'completed' : ''}`;
+            
+            card.innerHTML = `
+                <div class="text-base sm:text-lg font-bold text-orange-500 bg-orange-900/20 px-5 py-2 rounded-full mb-8 border border-orange-900/30 shadow-inner">미션 ${idx + 1} / ${category.missions.length}</div>
+                
+                <div class="relative w-full group px-2">
+                    <p class="text-2xl sm:text-4xl lg:text-5xl font-black ${isCompleted ? 'text-green-400' : 'text-slate-100'} leading-[1.6] sm:leading-[1.5] break-keep w-full cursor-pointer py-4 select-none transition-all hover:scale-[1.01]" onclick="app.toggleCurrentMission()">
+                        ${missionText}
+                    </p>
+                    <button onclick="app.speakText('${missionText.replace(/'/g, "\\'")}')" class="absolute -top-10 -right-2 w-14 h-14 bg-slate-700/80 hover:bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-all border border-slate-600 hover:scale-110 active:scale-95 z-10" title="목소리로 듣기">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    </button>
+                </div>
+                
+                <div class="checkbox-custom mt-10 cursor-pointer hover:scale-110 active:scale-95 transition-transform" onclick="app.toggleCurrentMission()">
+                    ${isCompleted ? '✓' : ''}
+                </div>
+
+                <!-- 이전/다음 버튼 영역 -->
+                <div class="flex justify-between w-full mt-10 gap-4 pt-6 border-t border-slate-700">
+                    <button onclick="app.prevMission()" class="flex-1 h-16 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-2xl transition-colors text-xl ${idx === 0 ? 'invisible' : ''}">◀ 이전</button>
+                    <button onclick="app.nextMission()" class="flex-1 h-16 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-2xl transition-colors text-xl ${idx === category.missions.length - 1 ? 'invisible' : ''}">다음 ▶</button>
+                </div>
+            `;
+            list.appendChild(card);
+        }
+
+        async function toggleCurrentMission() {
+            vibrate(50);
+            const category = quizData.find(c => c.id === state.currentCategory);
+            const missionId = `${category.id}-${state.currentMissionIndex}`;
+            
+            if (state.completed.has(missionId)) {
+                state.completed.delete(missionId);
+            } else {
+                state.completed.add(missionId);
+                triggerConfetti(); // 축하 효과
+            }
+            renderMissionCard(category);
+            updateCategoryProgressBadge(category);
+
+            // DB 저장
+            saveProgress();
+        }
+
+        function prevMission() {
+            vibrate(30);
+            if (state.currentMissionIndex > 0) {
+                state.currentMissionIndex--;
+                const category = quizData.find(c => c.id === state.currentCategory);
+                renderMissionCard(category);
+            }
+        }
+
+        function nextMission() {
+            vibrate(30);
+            const category = quizData.find(c => c.id === state.currentCategory);
+            if (state.currentMissionIndex < category.missions.length - 1) {
+                state.currentMissionIndex++;
+                renderMissionCard(category);
+            }
+        }
+
+        // --- 어르신을 위한 편의 기능 ---
+        
+        // 1. 진동 피드백
+        function vibrate(ms) {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        }
+
+        // 2. 미션 읽어주기 (TTS)
+        let isSpeaking = false;
+        function speakText(text) {
+            vibrate(40);
+            
+            // 기존 말하기 중단
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                if (isSpeaking) {
+                    setSpeakingUI(false);
+                    return;
+                }
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // 가용한 목소리 목록 가져오기
+            const voices = window.speechSynthesis.getVoices();
+            
+            // 더 자연스러운 한국어 목소리 우선 순위 (Google -> Microsoft -> 기본)
+            const preferredVoice = voices.find(v => v.lang.startsWith('ko') && v.name.includes('Google')) || 
+                                   voices.find(v => v.lang.startsWith('ko') && v.name.includes('Natural')) ||
+                                   voices.find(v => v.lang.startsWith('ko'));
+            
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+            
+            utterance.lang = 'ko-KR';
+            utterance.rate = 1.0; // 자연스러운 속도
+            utterance.pitch = 1.0;
+            
+            utterance.onstart = () => setSpeakingUI(true);
+            utterance.onend = () => setSpeakingUI(false);
+            utterance.onerror = () => setSpeakingUI(false);
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function setSpeakingUI(speaking) {
+            isSpeaking = speaking;
+            const btn = document.querySelector('#view-missions .mission-card button');
+            if (!btn) return;
+            
+            if (speaking) {
+                btn.classList.add('bg-orange-500', 'ring-4', 'ring-orange-500/30', 'scale-110');
+                btn.innerHTML = `
+                    <svg class="animate-pulse" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                    </svg>
+                `;
+            } else {
+                btn.classList.remove('bg-orange-500', 'ring-4', 'ring-orange-500/30', 'scale-110');
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                `;
+            }
+        }
+
+        // 3. 축하 팡파르 (Confetti) - 극도로 간결하게 변경
+        function triggerConfetti() {
+            confetti({
+                particleCount: 70,
+                spread: 60,
+                origin: { y: 0.7 },
+                zIndex: 9999,
+                ticks: 100, // 빨리 사라짐
+                gravity: 1.5, // 빨리 떨어짐
+                scalar: 0.8 // 파티클 크기 약간 작게
+            });
+        }
+
+        function updateCategoryProgressBadge(category) {
+            let completed = 0;
+            category.missions.forEach((_, idx) => {
+                if (state.completed.has(`${category.id}-${idx}`)) completed++;
+            });
+            document.getElementById('category-progress-badge').textContent = `${completed} / ${category.missions.length} 완료`;
+        }
+
+        function updateDashboardCharts() {
+            const completedCount = state.completed.size;
+            const totalPercent = Math.round((completedCount / state.totalMissions) * 100);
+            document.getElementById('total-percentage-text').textContent = `${totalPercent}% 달성`;
+
+            if (totalChartInstance) totalChartInstance.destroy();
+            const ctxTotal = document.getElementById('totalProgressChart').getContext('2d');
+            totalChartInstance = new Chart(ctxTotal, {
+                type: 'doughnut',
+                data: {
+                    labels: ['달성 완료', '남은 미션'],
+                    datasets: [{
+                        data: [completedCount, state.totalMissions - completedCount],
+                        backgroundColor: ['#10b981', '#1e293b'],
+                        borderWidth: 0, hoverOffset: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, cutout: '75%', 
+                    plugins: { 
+                        legend: { display: false } 
+                    } 
+                }
+            });
+
+            const categoryLabels = []; const categoryData = [];
+            quizData.forEach(cat => {
+                let comp = 0;
+                cat.missions.forEach((_, idx) => { if (state.completed.has(`${cat.id}-${idx}`)) comp++; });
+                categoryLabels.push(cat.title.split(':')[0]);
+                categoryData.push(Math.round((comp / cat.missions.length) * 100));
+            });
+
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            const ctxCategory = document.getElementById('categoryProgressChart').getContext('2d');
+            categoryChartInstance = new Chart(ctxCategory, {
+                type: 'bar',
+                data: {
+                    labels: categoryLabels,
+                    datasets: [{ label: '달성률(%)', data: categoryData, backgroundColor: '#F97316', borderRadius: 6 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, max: 100,
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // 전역 바인딩 (HTML에서 onclick으로 접근 가능하도록)
+        window.app = {
+            goBack: goBack,
+            toggleCurrentMission: toggleCurrentMission,
+            prevMission: prevMission,
+            nextMission: nextMission,
+            speakText: speakText,
+            jumpToLevel: jumpToLevel,
+            prevGameStep: prevGameStep,
+            resetGame: resetGame
+        };
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
