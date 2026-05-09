@@ -513,7 +513,7 @@
             {
                 id: 4,
                 title: "제 6과: 나 혼자서도 잘 다녀!",
-                subtitle: "카카오맵 길찾기",
+                subtitle: "카카오맵",
                 icon: "📍",
                 missions: [
                     "길 잃었을 때 생명줄! 카카오맵을 켜고 나침반(과녁) 버튼을 눌러서 지금 내 위치로 지도 한가운데를 딱! 맞춰보세요.",
@@ -1331,11 +1331,16 @@
                 card.className = "bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-700 cursor-pointer hover:bg-slate-700 hover:border-orange-500 transition-all transform hover:-translate-y-1 text-center flex flex-col justify-between h-full";
                 card.onclick = () => showCategoryMissions(category.id);
 
+                const isSpecialSubtitle = category.subtitle === "카카오맵";
+                const subtitleClass = isSpecialSubtitle 
+                    ? "text-base sm:text-lg lg:text-xl text-white mb-3 sm:mb-4 font-black truncate w-full" 
+                    : "text-xs sm:text-sm lg:text-base text-slate-400 mb-3 sm:mb-4 font-medium truncate w-full";
+
                 card.innerHTML = `
                     <div class="flex flex-col items-center justify-center flex-1">
                         <div class="text-3xl sm:text-4xl mb-2 sm:mb-3 drop-shadow-md">${category.icon}</div>
                         <h4 class="text-base sm:text-lg lg:text-xl font-bold text-slate-100 mb-1 leading-tight">${category.title.split(':')[0]}</h4>
-                        <p class="text-xs sm:text-sm lg:text-base text-slate-400 mb-3 sm:mb-4 font-medium truncate w-full">${category.subtitle}</p>
+                        <p class="${subtitleClass}">${category.subtitle}</p>
                     </div>
                     <div class="w-full mt-auto">
                         <div class="w-full bg-slate-900 rounded-full h-2 sm:h-3 mb-1.5 sm:mb-2 overflow-hidden border border-slate-700">
