@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,37 +9,134 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #0f172a; color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
-        
-        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 250px; max-height: 40vh; }
-        @media (min-width: 640px) { .chart-container { height: 300px; } }
-        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 40vh;
+        }
+
+        @media (min-width: 640px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+
         /* 꽉 차는 미션 카드 스타일 */
-        .mission-card { transition: all 0.2s ease-in-out; border: 3px solid #334155; min-height: 300px; background-color: #1e293b; color: #f1f5f9; }
-        .mission-card.completed { background-color: #064e3b; border-color: #10b981; }
-        
-        .checkbox-custom { display: inline-flex; align-items: center; justify-content: center; width: 4rem; height: 4rem; border-radius: 9999px; border: 4px solid #475569; font-size: 2rem; font-weight: bold; color: transparent; transition: all 0.2s; flex-shrink: 0; margin-top: 1rem; }
-        .mission-card.completed .checkbox-custom { background-color: #10b981; border-color: #10b981; color: white; }
-        
-        .view-section { display: none; }
-        .view-section.active { display: block; animation: fadeIn 0.4s; }
-        #view-missions.active { display: flex !important; flex-direction: column; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .loader { border: 4px solid #1e293b; border-top: 4px solid #3B82F6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .mission-card {
+            transition: all 0.2s ease-in-out;
+            border: 3px solid #334155;
+            min-height: 300px;
+            background-color: #1e293b;
+            color: #f1f5f9;
+        }
+
+        .mission-card.completed {
+            background-color: #064e3b;
+            border-color: #10b981;
+        }
+
+        .checkbox-custom {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 9999px;
+            border: 4px solid #475569;
+            font-size: 2rem;
+            font-weight: bold;
+            color: transparent;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            margin-top: 1rem;
+        }
+
+        .mission-card.completed .checkbox-custom {
+            background-color: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+            animation: fadeIn 0.4s;
+        }
+
+        #view-missions.active {
+            display: flex !important;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .loader {
+            border: 4px solid #1e293b;
+            border-top: 4px solid #3B82F6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
 
         /* 모달 스타일 */
-        #custom-modal.show { display: flex; animation: fadeIn 0.2s; }
-        #custom-modal .bg-white { background-color: #1e293b; color: #f1f5f9; }
-        #custom-modal .text-gray-800 { color: #f1f5f9; }
-        #custom-modal .text-gray-600 { color: #94a3b8; }
+        #custom-modal.show {
+            display: flex;
+            animation: fadeIn 0.2s;
+        }
+
+        #custom-modal .bg-white {
+            background-color: #1e293b;
+            color: #f1f5f9;
+        }
+
+        #custom-modal .text-gray-800 {
+            color: #f1f5f9;
+        }
+
+        #custom-modal .text-gray-600 {
+            color: #94a3b8;
+        }
     </style>
 </head>
+
 <body class="min-h-screen pb-20">
 
     <!-- 커스텀 팝업 (모달) UI -->
@@ -47,8 +145,10 @@
             <h3 id="modal-title" class="text-xl font-bold text-gray-800 mb-2">알림</h3>
             <p id="modal-message" class="text-gray-600 mb-6 break-keep leading-relaxed"></p>
             <div class="flex justify-end gap-2" id="modal-buttons">
-                <button id="modal-btn-cancel" class="hidden px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">취소</button>
-                <button id="modal-btn-confirm" class="px-4 py-2 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors">확인</button>
+                <button id="modal-btn-cancel"
+                    class="hidden px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">취소</button>
+                <button id="modal-btn-confirm"
+                    class="px-4 py-2 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors">확인</button>
             </div>
         </div>
     </div>
@@ -60,54 +160,66 @@
                 <!-- 로고와 기관명 -->
                 <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                     <img src="Logo_of_Seoul.jpg" alt="서울로고" class="h-6 sm:h-9 md:h-11 object-contain rounded-lg">
-                    <div class="text-base sm:text-2xl md:text-3xl font-black tracking-tighter whitespace-nowrap text-slate-400">성동노인종합복지관</div>
+                    <div
+                        class="text-base sm:text-2xl md:text-3xl font-black tracking-tighter whitespace-nowrap text-slate-400">
+                        성동노인종합복지관</div>
                 </div>
-                
+
                 <!-- 타이틀 (줄 바꿈) -->
-                <h1 class="text-sm sm:text-xl md:text-2xl font-black tracking-tight truncate text-orange-500">🎉 스마트폰 명랑 운동회</h1>
+                <h1 class="text-sm sm:text-xl md:text-2xl font-black tracking-tight truncate text-orange-500">🎉 스마트폰 명랑
+                    운동회</h1>
             </div>
-            
+
             <!-- 우측 제어 영역: 이름 + 버튼 -->
             <div class="flex items-center justify-end gap-4 sm:gap-10 shrink-0">
-                <div id="header-user-info" class="hidden text-sm sm:text-lg md:text-xl font-bold text-slate-300 whitespace-nowrap"><span id="display-name">어르신</span></div>
-                <button id="btn-teacher-dashboard" class="hidden bg-orange-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-lg hover:bg-orange-500 transition-colors whitespace-nowrap">학생 목록</button>
+                <div id="header-user-info"
+                    class="hidden text-sm sm:text-lg md:text-xl font-bold text-slate-300 whitespace-nowrap"><span
+                        id="display-name">어르신</span></div>
+                <button id="btn-teacher-dashboard"
+                    class="hidden bg-orange-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-lg hover:bg-orange-500 transition-colors whitespace-nowrap">학생
+                    목록</button>
             </div>
         </div>
     </header>
 
     <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        
+
         <!-- 선생님 대시보드 (학생 목록) -->
         <section id="view-teacher" class="view-section active">
             <div class="mb-6 sm:mb-8 bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700">
                 <h2 class="text-xl sm:text-2xl font-bold text-orange-500 mb-2">👨‍🏫 선생님 대시보드</h2>
-                <p class="text-base sm:text-lg text-slate-400 leading-relaxed">팀과 성함을 선택하시면 한 달 이내의 학생 명단을 불러옵니다. 선택 상태는 자동으로 기억됩니다.</p>
+                <p class="text-base sm:text-lg text-slate-400 leading-relaxed">팀과 성함을 선택하시면 한 달 이내의 학생 명단을 불러옵니다. 선택 상태는
+                    자동으로 기억됩니다.</p>
             </div>
 
             <div class="mb-6 sm:mb-8 bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700">
                 <div class="flex flex-col mb-4 gap-2">
                     <h3 class="text-lg sm:text-xl font-bold text-slate-100">📋 학생 이름 불러오기 (최근 한 달)</h3>
                 </div>
-                
+
                 <div class="flex flex-col gap-3 w-full">
                     <!-- 팀과 선생님 이름이 모바일에서 한 줄에 꽉 차게 배치 -->
                     <div class="flex flex-row gap-2 w-full">
-                        <select id="sync-team-select" class="h-12 px-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-base font-bold text-slate-100 bg-slate-700 w-28 shrink-0">
+                        <select id="sync-team-select"
+                            class="h-12 px-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-base font-bold text-slate-100 bg-slate-700 w-28 shrink-0">
                             <option value="1팀">1팀</option>
                             <option value="2팀">2팀</option>
                             <option value="3팀">3팀</option>
                         </select>
-                        <select id="sync-teacher-select" class="h-12 px-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-base font-bold text-slate-100 bg-slate-700 flex-1">
+                        <select id="sync-teacher-select"
+                            class="h-12 px-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-base font-bold text-slate-100 bg-slate-700 flex-1">
                             <option value="">선생님 선택</option>
                         </select>
                     </div>
-                    
-                    <button id="btn-fetch-sheets" class="h-12 bg-orange-600 hover:bg-orange-500 text-white px-4 rounded-xl font-bold transition-colors whitespace-nowrap w-full flex items-center justify-center gap-2 text-base shadow-lg">
+
+                    <button id="btn-fetch-sheets"
+                        class="h-12 bg-orange-600 hover:bg-orange-500 text-white px-4 rounded-xl font-bold transition-colors whitespace-nowrap w-full flex items-center justify-center gap-2 text-base shadow-lg">
                         <span class="text-lg">🔄</span> 학생 이름 읽기
                     </button>
                 </div>
-                
-                <div id="sheets-loading" class="hidden text-center py-6 text-orange-500 font-medium flex-col items-center">
+
+                <div id="sheets-loading"
+                    class="hidden text-center py-6 text-orange-500 font-medium flex-col items-center">
                     <div class="loader"></div>
                     <span id="loading-message" class="text-sm">데이터를 분석 중입니다...</span>
                 </div>
@@ -116,9 +228,10 @@
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-xl font-bold text-slate-100">담당 어르신 목록 📋</h3>
             </div>
-            
-            <div id="loading-students" class="text-center py-8 text-slate-500 text-base font-medium">데이터를 불러오는 중...</div>
-            
+
+            <div id="loading-students" class="text-center py-8 text-slate-500 text-base font-medium">데이터를 불러오는 중...
+            </div>
+
             <!-- 학생 목록 그리드 (한 줄에 2개 이상) -->
             <div id="student-list-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 <!-- 학생 목록 렌더링 영역 -->
@@ -133,11 +246,14 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-10">
-                <div class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center justify-center min-h-[200px]">
+                <div
+                    class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center justify-center min-h-[200px]">
                     <h3 class="text-lg sm:text-xl font-bold text-slate-300 mb-2">전체 훈련 달성률</h3>
-                    <div class="text-5xl sm:text-7xl font-black text-orange-500 py-4 sm:py-6" id="total-percentage-text">0%</div>
+                    <div class="text-5xl sm:text-7xl font-black text-orange-500 py-4 sm:py-6"
+                        id="total-percentage-text">0%</div>
                 </div>
-                <div class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center w-full overflow-hidden">
+                <div
+                    class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center w-full overflow-hidden">
                     <h3 class="text-lg sm:text-xl font-bold text-slate-300 mb-4">과목별 달성 현황</h3>
                     <div class="chart-container w-full"><canvas id="categoryProgressChart"></canvas></div>
                 </div>
@@ -152,11 +268,14 @@
 
         <!-- 키보드 게임 뷰 (손가락 놀이터) -->
         <section id="view-keyboard-game" class="view-section flex-1">
-            <div class="mb-4 flex items-center justify-between bg-[#0f172a] py-2 z-40 border-b border-slate-800 sticky top-[60px] sm:top-[72px]">
-                <button onclick="app.goBack()" class="h-12 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold px-4 rounded-xl text-base sm:text-lg flex items-center gap-2 border border-slate-700 shadow-lg transition-colors">
+            <div
+                class="mb-4 flex items-center justify-between bg-[#0f172a] py-2 z-40 border-b border-slate-800 sticky top-[60px] sm:top-[72px]">
+                <button onclick="app.goBack()"
+                    class="h-12 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold px-4 rounded-xl text-base sm:text-lg flex items-center gap-2 border border-slate-700 shadow-lg transition-colors">
                     <span>◀</span> 목록으로
                 </button>
-                <div class="text-base sm:text-xl font-bold text-orange-500 bg-orange-900/30 px-3 sm:px-4 py-2 rounded-lg" id="game-progress-badge">0 / 45 완료</div>
+                <div class="text-base sm:text-xl font-bold text-orange-500 bg-orange-900/30 px-3 sm:px-4 py-2 rounded-lg"
+                    id="game-progress-badge">0 / 45 완료</div>
             </div>
 
             <div class="w-full max-w-md mx-auto flex flex-col gap-4">
@@ -172,30 +291,37 @@
                         </div>
                     </div>
                     <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-700">
-                        <div id="game-progress-fill" class="progress-bar h-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" style="width: 2%"></div>
+                        <div id="game-progress-fill"
+                            class="progress-bar h-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]"
+                            style="width: 2%"></div>
                     </div>
                 </div>
 
                 <div class="flex gap-2 justify-center">
-                    <button onclick="app.jumpToLevel('초급')" class="flex-1 py-3 rounded-2xl font-bold bg-blue-900/30 text-blue-400 border border-blue-900/50 hover:bg-blue-900/50 transition-colors text-sm">초급</button>
-                    <button onclick="app.jumpToLevel('중급')" class="flex-1 py-3 rounded-2xl font-bold bg-green-900/30 text-green-400 border border-green-900/50 hover:bg-green-900/50 transition-colors text-sm">중급</button>
-                    <button onclick="app.jumpToLevel('고급')" class="flex-1 py-3 rounded-2xl font-bold bg-purple-900/30 text-purple-400 border border-purple-900/50 hover:bg-purple-900/50 transition-colors text-sm">고급</button>
+                    <button onclick="app.jumpToLevel('초급')"
+                        class="flex-1 py-3 rounded-2xl font-bold bg-blue-900/30 text-blue-400 border border-blue-900/50 hover:bg-blue-900/50 transition-colors text-sm">초급</button>
+                    <button onclick="app.jumpToLevel('중급')"
+                        class="flex-1 py-3 rounded-2xl font-bold bg-green-900/30 text-green-400 border border-green-900/50 hover:bg-green-900/50 transition-colors text-sm">중급</button>
+                    <button onclick="app.jumpToLevel('고급')"
+                        class="flex-1 py-3 rounded-2xl font-bold bg-purple-900/30 text-purple-400 border border-purple-900/50 hover:bg-purple-900/50 transition-colors text-sm">고급</button>
                 </div>
 
-                <div id="game-card" class="bg-slate-800 rounded-3xl shadow-2xl p-8 text-center flex flex-col justify-center border-4 border-slate-700 transition-all min-h-[300px]">
-                    <div id="game-category-tag" class="inline-block mx-auto px-4 py-1 rounded-full text-xs font-bold mb-6 bg-orange-900/30 text-orange-400 border border-orange-900/50">
+                <div id="game-card"
+                    class="bg-slate-800 rounded-3xl shadow-2xl p-8 text-center flex flex-col justify-center border-4 border-slate-700 transition-all min-h-[300px]">
+                    <div id="game-category-tag"
+                        class="inline-block mx-auto px-4 py-1 rounded-full text-xs font-bold mb-6 bg-orange-900/30 text-orange-400 border border-orange-900/50">
                         초급 연습
                     </div>
-                    
-                    <div id="game-target-word" class="text-5xl sm:text-6xl font-black text-slate-100 mb-8 break-keep tracking-tight">
+
+                    <div id="game-target-word"
+                        class="text-5xl sm:text-6xl font-black text-slate-100 mb-8 break-keep tracking-tight">
                         나비
                     </div>
 
                     <div class="relative mb-4">
-                        <input type="text" id="game-user-input" 
+                        <input type="text" id="game-user-input"
                             class="w-full text-3xl text-center border-b-4 border-slate-700 focus:border-orange-500 outline-none py-3 font-bold text-orange-500 transition-colors bg-transparent"
-                            placeholder="똑같이 써보세요"
-                            autocomplete="off">
+                            placeholder="똑같이 써보세요" autocomplete="off">
                     </div>
 
                     <div id="game-feedback-msg" class="h-6 text-sm font-bold text-slate-500">
@@ -204,25 +330,33 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 mb-10">
-                    <button onclick="app.prevGameStep()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold py-4 rounded-2xl shadow-lg border border-slate-600">이전 문제</button>
-                    <button onclick="app.resetGame()" class="bg-rose-900/20 hover:bg-rose-900/40 text-rose-400 font-bold py-4 rounded-2xl shadow-lg border border-rose-900/30">처음부터</button>
+                    <button onclick="app.prevGameStep()"
+                        class="bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold py-4 rounded-2xl shadow-lg border border-slate-600">이전
+                        문제</button>
+                    <button onclick="app.resetGame()"
+                        class="bg-rose-900/20 hover:bg-rose-900/40 text-rose-400 font-bold py-4 rounded-2xl shadow-lg border border-rose-900/30">처음부터</button>
                 </div>
             </div>
         </section>
 
         <!-- 미션 뷰 (한 문제씩 나오는 슬라이드 형태) -->
         <section id="view-missions" class="view-section flex-1">
-            <div class="mb-4 sm:mb-6 flex items-center justify-between bg-[#0f172a] py-2 z-40 border-b border-slate-800 sticky top-[60px] sm:top-[72px]">
-                <button onclick="app.goBack()" class="h-12 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold px-4 rounded-xl text-base sm:text-lg flex items-center gap-2 border border-slate-700 shadow-lg transition-colors">
+            <div
+                class="mb-4 sm:mb-6 flex items-center justify-between bg-[#0f172a] py-2 z-40 border-b border-slate-800 sticky top-[60px] sm:top-[72px]">
+                <button onclick="app.goBack()"
+                    class="h-12 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold px-4 rounded-xl text-base sm:text-lg flex items-center gap-2 border border-slate-700 shadow-lg transition-colors">
                     <span>◀</span> 목록으로
                 </button>
-                <div class="text-base sm:text-xl font-bold text-orange-500 bg-orange-900/30 px-3 sm:px-4 py-2 rounded-lg" id="category-progress-badge">0 / 25 완료</div>
+                <div class="text-base sm:text-xl font-bold text-orange-500 bg-orange-900/30 px-3 sm:px-4 py-2 rounded-lg"
+                    id="category-progress-badge">0 / 25 완료</div>
             </div>
 
-            <h2 id="mission-category-title" class="text-2xl sm:text-3xl font-black text-slate-100 mb-6 text-center w-full px-2">과 제목</h2>
+            <h2 id="mission-category-title"
+                class="text-2xl sm:text-3xl font-black text-slate-100 mb-6 text-center w-full px-2">과 제목</h2>
 
             <!-- 슬라이드 카드 컨테이너 -->
-            <div id="mission-list" class="flex flex-col items-center justify-center w-full max-w-2xl mx-auto flex-1 pb-10">
+            <div id="mission-list"
+                class="flex flex-col items-center justify-center w-full max-w-2xl mx-auto flex-1 pb-10">
                 <!-- 자바스크립트로 문제 한 개씩 렌더링 -->
             </div>
         </section>
@@ -552,7 +686,7 @@
             {
                 id: 9,
                 title: "제 11과: 갤럭시 AI",
-                subtitle: "내 폰의 숨겨진 인공지능 비서",
+                subtitle: "갤럭시 AI 활용",
                 icon: "🪄",
                 missions: [
                     "먼저 내 폰의 지능을 확인합시다! [설정]-[휴대전화 정보]-[소프트웨어 정보]에서 'One UI 버전'이 6.1 이상인지 확인해 보세요.",
@@ -614,13 +748,56 @@
                     "드디어 완성! 영상을 내 폰에 저장하기 위해 우측 상단에 있는 빨간색 '추출하기' 버튼을 꾹 눌러보세요.",
                     "(가장 중요!) 추출 중 나오는 광고에 놀라 끄지 마시고, 1분 정도 느긋하게 기다렸다가 'X(닫기)'를 눌러 내 갤러리에 영상을 무사히 저장해 보세요!"
                 ]
+            },
+            {
+                id: 12,
+                title: "제 13과: 삼성노트 사용",
+                subtitle: "똑똑한 비서, 삼성 노트 활용법",
+                icon: "📒",
+                missions: [
+                    "빨간색 수첩 모양 아이콘(삼성 노트)을 찾아 2초간 꾹 누르고 '홈 화면에 추가'를 눌러보세요.",
+                    "홈 화면에 생긴 삼성 노트 아이콘을 꾹 눌러서 내가 가장 쓰기 편한 위치로 옮겨보세요.",
+                    "삼성 노트를 열고 왼쪽 상단 메뉴(≡) - 톱니바퀴 - [삼성 노트 앱 정보]에서 내 버전을 확인해 보세요.",
+                    "버전이 낮다면 Play 스토어에서 '삼성 노트'를 검색해 [업데이트] 버튼이 있는지 확인해 보세요.",
+                    "노트 메인 화면 오른쪽 하단에 있는 연필 모양 '노트 쓰기' 버튼을 당당하게 눌러보세요.",
+                    "제일 윗부분 제목 칸을 터치하고 '오늘의 연습'이라고 멋진 제목을 지어보세요.",
+                    "우측 상단 점 3개(⋮)를 누르고 [페이지 설정]에 들어가서 도화지 배경색을 예쁜 노란색으로 바꿔보세요.",
+                    "페이지 설정에서 스크롤 방향을 '상하(위아래)'로 선택해 페이지를 편하게 넘길 수 있게 해보세요.",
+                    "점 3개(⋮) - [페이지 템플릿]에서 글씨 쓰기 편한 '줄무늬' 모양 도화지를 골라보세요.",
+                    "줄무늬 템플릿을 고를 때 아래쪽 [모든 페이지에 적용] 스위치를 켜서 전체를 통일해 보세요.",
+                    "템플릿 메뉴에서 [PDF] 탭을 누르고, 비서가 써주는 다이어리 같은 예쁜 서식 하나를 골라보세요.",
+                    "[설정]-[새 노트 스타일]에 들어가서, 새 노트를 만들 때마다 항상 내가 좋아하는 배경색이 나오게 고정해 보세요.",
+                    "화면에 떠 있는 메뉴바(툴바)의 빈 곳을 꾹 눌러서, 내 손이 닿기 편한 위나 아래로 위치를 옮겨보세요.",
+                    "키보드 위 체크박스 아이콘을 누르고 '1. 운동하기', '2. 물 마시기' 등 오늘 할 일 리스트를 만들어보세요.",
+                    "다 마친 할 일의 체크박스를 터치해서 글자에 삭~ 취소선이 생기는 마법을 확인해 보세요.",
+                    "글머리 기호(동그라미)를 눌러서 장볼 목록이나 준비물 리스트를 보기 좋게 정돈해 보세요.",
+                    "내가 쓴 글자를 길게 눌러 범위를 잡은 뒤, '진하게(B)' 또는 '밑줄(U)'을 그어 강조해 보세요.",
+                    "무지개색 동그라미를 눌러서 글자 색깔을 눈에 확 띄는 빨간색이나 파란색으로 바꿔보세요.",
+                    "글자 배경색(형광펜 효과) 아이콘을 눌러서 중요한 문장 뒤에 노란색 배경을 깔아보세요.",
+                    "노트에 'naver.com' 주소를 적고 뒤로가기를 누른 뒤, 파랗게 변한 글자를 눌러 인터넷이 열리는지 보세요.",
+                    "노트에 '3 * 40 =' 이라고 적고 뒤로가기를 한 뒤, 나타나는 계산기 아이콘을 눌러 정답을 확인해 보세요.",
+                    "상단 펜 아이콘을 누르고 손가락으로 화면에 내 이름을 정성껏 크게 써보세요.",
+                    "형광펜을 골라 아까 쓴 이름 위에 슥슥 칠해서 중요한 내용임을 표시해 보세요.",
+                    "내가 좋아하는 펜과 색상을 설정한 뒤 [즐겨찾기(별)]를 눌러서 나중에 바로 꺼내 쓸 수 있게 저장해 보세요.",
+                    "삐뚤게 쓴 손글씨를 꾹 눌러 선택한 뒤 [텍스트로 변환]을 눌러 컴퓨터 글자처럼 깔끔하게 바꿔보세요.",
+                    "오른쪽 위 클립 모양 아이콘을 누르고 [이미지]를 선택해 내 갤러리에 있는 예쁜 사진 한 장을 불러오세요.",
+                    "불러온 사진을 누르고 점 3개를 눌러 '텍스트와 연동 해제'를 한 뒤, 사진 바로 옆에 글자를 써보세요.",
+                    "클립 아이콘 - [음성 녹음]을 누르고, 지금 내 기분을 목소리로 녹음해서 노트에 쏙 담아보세요.",
+                    "화면 빈 곳을 길게 꾹 눌러서 나타나는 [텍스트 상자]를 이용해 내가 원하는 위치에 글자를 넣어보세요.",
+                    "두 손가락을 화면 아래서 위로 올려 '분할 화면'을 만들고, 인터넷 뉴스를 보면서 동시에 메모를 해보세요.",
+                    "인터넷 기사의 좋은 문장을 길게 눌러 선택한 뒤, 그대로 손가락으로 끌어서(드래그) 내 노트로 옮겨보세요.",
+                    "나만 보고 싶은 노트를 길게 눌러 [노트 잠금]을 설정하고 지문이나 비밀번호를 걸어보세요.",
+                    "메인 화면 돋보기 아이콘을 누르고 '연습'이라고 검색해서 옛날에 쓴 노트를 1초 만에 찾아보세요.",
+                    "왼쪽 메뉴(≡) - [폴더 관리]에서 '가족', '일기' 폴더를 만들어 주제별로 노트를 정리해 보세요.",
+                    "스마트폰 홈 화면 빈 곳을 꾹 눌러 [위젯]에서 삼성 노트를 골라, 앱을 안 열어도 메모가 보이게 꺼내보세요."
+                ]
             }
         ];
 
         let state = {
             completed: new Set(),
             currentCategory: null,
-            totalMissions: 327, // 282 + 45 = 327
+            totalMissions: 0, // initApp에서 자동 계산됨
             userId: null,
             currentStudentId: null,
             currentStudentName: null,
@@ -696,6 +873,9 @@
 
         async function initApp() {
             setupFirebase();
+            
+            // 전체 미션 개수 자동 계산 (챕터 추가 시 자동 반영)
+            state.totalMissions = quizData.reduce((acc, cat) => acc + cat.missions.length, 0);
 
             document.getElementById('btn-teacher-dashboard').addEventListener('click', goToTeacherDashboard);
             document.getElementById('btn-fetch-sheets').addEventListener('click', fetchStudentsFromSheets);
@@ -714,12 +894,12 @@
             missionView.addEventListener('touchend', (e) => {
                 // 미션 화면이 활성화된 상태에서만 작동
                 if (!missionView.classList.contains('active')) return;
-                
+
                 const touchEndX = e.changedTouches[0].screenX;
                 const touchEndY = e.changedTouches[0].screenY;
                 const deltaX = touchEndX - touchStartX;
                 const deltaY = touchEndY - touchStartY;
-                
+
                 // 수직(위아래) 스크롤보다 수평(좌우) 스와이프가 더 크고, 이동 거리가 50px 이상일 때만 판정
                 if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
                     if (deltaX < 0) {
@@ -752,12 +932,12 @@
             if (cachedTeam) {
                 document.getElementById('sync-team-select').value = cachedTeam;
             }
-            await loadTeachersList(); 
+            await loadTeachersList();
         }
 
         function loadLocalStudents() {
             const saved = localStorage.getItem('sm_gym_students_local');
-            if(saved) {
+            if (saved) {
                 state.currentStudents = JSON.parse(saved);
             }
             renderStudentList(state.currentStudents);
@@ -770,11 +950,11 @@
         async function loadTeachersList() {
             const selectedTeam = document.getElementById('sync-team-select').value;
             const selectTeacher = document.getElementById('sync-teacher-select');
-            
+
             // 캐시된 선생님 데이터 확인
             const cachedTeachersKey = `sm_gym_teachers_${selectedTeam}`;
             const cachedTeachers = localStorage.getItem(cachedTeachersKey);
-            
+
             if (cachedTeachers) {
                 populateTeacherDropdown(JSON.parse(cachedTeachers));
             } else {
@@ -787,7 +967,7 @@
                 const res = await fetch(`${sheetUrls[selectedTeam]}&t=${Date.now()}`);
                 if (!res.ok) throw new Error('네트워크 응답 오류');
                 const text = await res.text();
-                
+
                 const teachers = extractTeachers(text);
                 localStorage.setItem(cachedTeachersKey, JSON.stringify(teachers));
                 populateTeacherDropdown(teachers);
@@ -805,10 +985,10 @@
                 opt.textContent = teacher;
                 selectTeacher.appendChild(opt);
             });
-            
+
             // 캐시된 선택된 선생님 복구
             const cachedTeacher = localStorage.getItem('sm_gym_last_teacher');
-            if(cachedTeacher && teachersArray.includes(cachedTeacher)) {
+            if (cachedTeacher && teachersArray.includes(cachedTeacher)) {
                 selectTeacher.value = cachedTeacher;
             }
         }
@@ -831,7 +1011,7 @@
                 if (!row || row.length < 2) continue;
                 let teacherName = row[1] ? row[1].trim() : '';
                 if (teacherName !== '' && teacherName !== '강사명' && teacherName !== '-' && isNaN(teacherName)) {
-                    if(!namesList.includes(teacherName)) {
+                    if (!namesList.includes(teacherName)) {
                         namesList.push(teacherName);
                     }
                 }
@@ -842,7 +1022,7 @@
         function loadStudents() {
             if (!state.userId || !useFirebase) return;
             const studentsRef = collection(db, 'artifacts', appId, 'users', state.userId, 'students');
-            
+
             studentsUnsubscribe = onSnapshot(studentsRef, (snapshot) => {
                 let students = [];
                 snapshot.forEach(doc => { students.push({ id: doc.id, ...doc.data() }); });
@@ -870,7 +1050,7 @@
             const selectedTeacher = document.getElementById('sync-teacher-select').value || localStorage.getItem('sm_gym_last_teacher');
 
             let filteredStudents = students.filter(s => s.team === selectedTeam && !s.name.endsWith('날') && !s.name.endsWith('절'));
-            
+
             // 이름순 정렬
             filteredStudents.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
@@ -881,7 +1061,7 @@
                 const card = document.createElement('div');
                 // 다크 모드에 어울리는 카드 스타일
                 card.className = "bg-slate-800 p-3 sm:p-4 rounded-xl shadow-lg border border-slate-700 cursor-pointer hover:border-orange-500 hover:shadow-orange-500/10 transition-all flex flex-col justify-between items-center group relative min-h-[5rem] gap-2";
-                
+
                 card.innerHTML = `
                     <div class="w-full text-center truncate">
                         <h4 class="text-lg sm:text-2xl font-bold text-slate-100 group-hover:text-orange-500 transition-colors truncate">${student.name} 님</h4>
@@ -895,38 +1075,38 @@
                         </button>
                     </div>
                 `;
-                
+
                 card.addEventListener('click', () => selectStudent(student));
-                
+
                 const deleteBtn = card.querySelector('.delete-btn');
                 deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); 
+                    e.stopPropagation();
                     deleteStudent(student.id, student.name);
                 });
-                
+
                 container.appendChild(card);
             });
-            
-            if(filteredStudents.length === 0) {
-                 container.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500 text-lg">선택한 팀의 어르신 명단이 없습니다.</div>';
+
+            if (filteredStudents.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500 text-lg">선택한 팀의 어르신 명단이 없습니다.</div>';
             }
         }
 
         async function fetchStudentsFromSheets() {
             const selectedTeam = document.getElementById('sync-team-select').value;
-            const selectedTeacher = document.getElementById('sync-teacher-select').value; 
-            
-            if(!selectedTeacher) {
+            const selectedTeacher = document.getElementById('sync-teacher-select').value;
+
+            if (!selectedTeacher) {
                 showAlert("선생님을 먼저 선택해주세요."); return;
             }
 
             // 선택 기억
             localStorage.setItem('sm_gym_last_team', selectedTeam);
             localStorage.setItem('sm_gym_last_teacher', selectedTeacher);
-            
+
             const btn = document.getElementById('btn-fetch-sheets');
             const loadingDiv = document.getElementById('sheets-loading');
-            
+
             btn.style.display = 'none';
             loadingDiv.classList.remove('hidden');
 
@@ -934,35 +1114,35 @@
             await new Promise(resolve => setTimeout(resolve, 50));
 
             let totalAdded = 0;
-            
+
             try {
                 const res = await fetch(`${sheetUrls[selectedTeam]}&t=${Date.now()}`);
                 if (!res.ok) throw new Error('네트워크 응답 오류');
                 const text = await res.text();
-                
+
                 if (text.trim().toLowerCase().startsWith("<!doctype html")) {
                     throw new Error("AUTH_ERROR");
                 }
-                
+
                 const names = extractStudents(text, selectedTeacher);
-                
+
                 const enrollPromises = [];
                 const currentStudentKeys = new Set(state.currentStudents.map(s => `${s.team}_${s.name}`));
 
                 for (const name of names) {
                     const cleanName = name.trim();
                     const key = `${selectedTeam}_${cleanName}`;
-                    
+
                     if (!currentStudentKeys.has(key)) {
                         currentStudentKeys.add(key);
-                        
+
                         const studentId = 'student_' + Date.now() + Math.floor(Math.random() * 1000000);
                         const newStudent = {
-                            name: cleanName, team: selectedTeam, completed: [], 
+                            name: cleanName, team: selectedTeam, completed: [],
                             createdAt: Date.now(), updatedAt: Date.now()
                         };
-                        
-                        if(useFirebase && state.userId) {
+
+                        if (useFirebase && state.userId) {
                             const studentRef = doc(db, 'artifacts', appId, 'users', state.userId, 'students', studentId);
                             enrollPromises.push(setDoc(studentRef, newStudent));
                         } else {
@@ -988,9 +1168,9 @@
             } finally {
                 loadingDiv.classList.add('hidden');
                 btn.style.display = 'flex';
-                
-                if(!useFirebase) renderStudentList(state.currentStudents);
-                
+
+                if (!useFirebase) renderStudentList(state.currentStudents);
+
                 showAlert(`[${selectedTeam}] '${selectedTeacher}' 선생님 반\n학생 이름 읽기 완료!\n새로운 어르신 ${totalAdded}명이 추가되었습니다.`);
             }
         }
@@ -999,7 +1179,7 @@
             const results = Papa.parse(text, { header: false, skipEmptyLines: true });
             const data = results.data;
             let headerRowIndex = -1;
-            
+
             for (let i = 0; i < Math.min(10, data.length); i++) {
                 if (data[i] && data[i].length > 3 && data[i][3] && data[i][3].replace(/\s+/g, '') === "구분") {
                     headerRowIndex = i; break;
@@ -1009,7 +1189,7 @@
 
             const headerRow = data[headerRowIndex];
             const validColIndices = [];
-            
+
             // 오늘 기준으로 30일(과거 한 달) 이내만
             const today = new Date();
             today.setHours(23, 59, 59, 999);
@@ -1024,7 +1204,7 @@
                         let currentYear = today.getFullYear();
                         let d = new Date(currentYear, parseInt(match[1]) - 1, parseInt(match[2]));
                         if (d > today) d.setFullYear(currentYear - 1); // 작년 데이터 처리
-                        
+
                         if (d >= oneMonthAgo && d <= today) {
                             validColIndices.push(j);
                         }
@@ -1091,7 +1271,7 @@
 
         async function deleteStudent(studentId, studentName) {
             showConfirm(`'${studentName}' 어르신의 진행 내역을 완전히 삭제할까요?`, async () => {
-                if(useFirebase && state.userId) {
+                if (useFirebase && state.userId) {
                     const studentRef = doc(db, 'artifacts', appId, 'users', state.userId, 'students', studentId);
                     await deleteDoc(studentRef);
                 } else {
@@ -1106,14 +1286,14 @@
             state.currentStudentId = student.id;
             state.currentStudentName = student.name;
             state.completed = new Set(student.completed || []);
-            
+
             document.getElementById('display-name').textContent = student.name + ' 님';
             document.getElementById('header-user-info').classList.remove('hidden');
             document.getElementById('btn-teacher-dashboard').classList.remove('hidden');
-            
+
             document.getElementById('view-teacher').classList.remove('active');
             document.getElementById('view-dashboard').classList.add('active');
-            
+
             renderCategoryGrid();
             updateDashboardCharts();
             window.scrollTo(0, 0);
@@ -1123,22 +1303,22 @@
             state.currentStudentId = null;
             state.currentStudentName = null;
             state.completed = new Set();
-            
+
             document.getElementById('header-user-info').classList.add('hidden');
             document.getElementById('btn-teacher-dashboard').classList.add('hidden');
-            
+
             document.getElementById('view-missions').classList.remove('active');
             document.getElementById('view-dashboard').classList.remove('active');
             document.getElementById('view-teacher').classList.add('active');
-            
-            renderStudentList(state.currentStudents); 
+
+            renderStudentList(state.currentStudents);
             window.scrollTo(0, 0);
         }
 
         function renderCategoryGrid() {
             const grid = document.getElementById('category-grid');
             grid.innerHTML = '';
-            
+
             quizData.forEach((category) => {
                 const totalInCategory = category.missions.length;
                 let completedInCategory = 0;
@@ -1150,7 +1330,7 @@
                 const card = document.createElement('div');
                 card.className = "bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-700 cursor-pointer hover:bg-slate-700 hover:border-orange-500 transition-all transform hover:-translate-y-1 text-center flex flex-col justify-between h-full";
                 card.onclick = () => showCategoryMissions(category.id);
-                
+
                 card.innerHTML = `
                     <div class="flex flex-col items-center justify-center flex-1">
                         <div class="text-3xl sm:text-4xl mb-2 sm:mb-3 drop-shadow-md">${category.icon}</div>
@@ -1171,15 +1351,15 @@
         // --- 데이터 저장 통합 함수 ---
         async function saveProgress() {
             if (!state.currentStudentId) return;
-            
+
             const completedArray = Array.from(state.completed);
-            
+
             if (useFirebase && state.userId) {
                 try {
                     const studentRef = doc(db, 'artifacts', appId, 'users', state.userId, 'students', state.currentStudentId);
-                    await setDoc(studentRef, { 
-                        completed: completedArray, 
-                        updatedAt: Date.now() 
+                    await setDoc(studentRef, {
+                        completed: completedArray,
+                        updatedAt: Date.now()
                     }, { merge: true });
                 } catch (e) {
                     console.error("Firebase 저장 실패:", e);
@@ -1197,7 +1377,7 @@
         function showCategoryMissions(categoryId) {
             const category = quizData.find(c => c.id === categoryId);
             state.currentCategory = categoryId;
-            
+
             if (category.isGame) {
                 // 게임 뷰로 이동
                 document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
@@ -1207,7 +1387,7 @@
                 state.currentMissionIndex = 0;
                 document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
                 document.getElementById('view-missions').classList.add('active');
-                
+
                 document.getElementById('mission-category-title').textContent = `${category.icon} ${category.title}`;
                 renderMissionCard(category);
                 updateCategoryProgressBadge(category);
@@ -1235,10 +1415,10 @@
         function updateGameDisplay() {
             const category = quizData.find(c => c.id === state.currentCategory);
             const currentWord = category.missions[gameIdx];
-            
+
             document.getElementById('game-target-word').innerText = currentWord;
             document.getElementById('current-step').innerText = gameIdx + 1;
-            
+
             const progress = ((gameIdx + 1) / category.missions.length) * 100;
             document.getElementById('game-progress-fill').style.width = `${progress}%`;
             updateGameProgressBadge();
@@ -1268,9 +1448,9 @@
             newInput.autocomplete = "off";
             newInput.addEventListener('input', handleGameInput);
             oldInput.parentNode.replaceChild(newInput, oldInput);
-            
+
             setTimeout(() => { newInput.focus(); }, 100);
-            
+
             const targetDisplay = document.getElementById('game-target-word');
             targetDisplay.classList.remove('text-5xl', 'text-6xl', 'text-3xl');
             if (currentWord.length > 8) {
@@ -1295,7 +1475,7 @@
                 feedbackMsg.innerText = "참 잘하셨어요! 다음 문제~";
                 feedbackMsg.className = "h-6 text-sm font-bold text-green-400";
                 gameCard.classList.add('correct-flash');
-                
+
                 const missionId = `${category.id}-${gameIdx}`;
                 if (!state.completed.has(missionId)) {
                     state.completed.add(missionId);
@@ -1360,7 +1540,7 @@
             if (level === '초급') gameIdx = 0;
             else if (level === '중급') gameIdx = 15;
             else if (level === '고급') gameIdx = 30;
-            
+
             isGameTransitioning = false;
             updateGameDisplay();
         }
@@ -1369,7 +1549,7 @@
             state.currentCategory = null;
             document.getElementById('view-missions').classList.remove('active');
             document.getElementById('view-dashboard').classList.add('active');
-            
+
             renderCategoryGrid();
             updateDashboardCharts();
             window.scrollTo(0, 0);
@@ -1378,16 +1558,16 @@
         // 꽉 차는 한 장씩 보기 카드 렌더링
         function renderMissionCard(category) {
             const list = document.getElementById('mission-list');
-            list.innerHTML = ''; 
-            
+            list.innerHTML = '';
+
             const idx = state.currentMissionIndex;
             const missionText = category.missions[idx];
             const missionId = `${category.id}-${idx}`;
             const isCompleted = state.completed.has(missionId);
-            
+
             const card = document.createElement('div');
             card.className = `mission-card p-6 sm:p-10 rounded-3xl flex flex-col items-center justify-center text-center w-full shadow-2xl ${isCompleted ? 'completed' : ''}`;
-            
+
             card.innerHTML = `
                 <div class="text-base sm:text-lg font-bold text-orange-500 bg-orange-900/20 px-5 py-2 rounded-full mb-8 border border-orange-900/30 shadow-inner">미션 ${idx + 1} / ${category.missions.length}</div>
                 
@@ -1417,7 +1597,7 @@
             vibrate(50);
             const category = quizData.find(c => c.id === state.currentCategory);
             const missionId = `${category.id}-${state.currentMissionIndex}`;
-            
+
             if (state.completed.has(missionId)) {
                 state.completed.delete(missionId);
             } else {
@@ -1450,7 +1630,7 @@
         }
 
         // --- 어르신을 위한 편의 기능 ---
-        
+
         // 1. 진동 피드백
         function vibrate(ms) {
             if (navigator.vibrate) navigator.vibrate(ms);
@@ -1460,7 +1640,7 @@
         let isSpeaking = false;
         function speakText(text) {
             vibrate(40);
-            
+
             // 기존 말하기 중단
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
@@ -1469,29 +1649,29 @@
                     return;
                 }
             }
-            
+
             const utterance = new SpeechSynthesisUtterance(text);
-            
+
             // 가용한 목소리 목록 가져오기
             const voices = window.speechSynthesis.getVoices();
-            
+
             // 더 자연스러운 한국어 목소리 우선 순위 (Google -> Microsoft -> 기본)
-            const preferredVoice = voices.find(v => v.lang.startsWith('ko') && v.name.includes('Google')) || 
-                                   voices.find(v => v.lang.startsWith('ko') && v.name.includes('Natural')) ||
-                                   voices.find(v => v.lang.startsWith('ko'));
-            
+            const preferredVoice = voices.find(v => v.lang.startsWith('ko') && v.name.includes('Google')) ||
+                voices.find(v => v.lang.startsWith('ko') && v.name.includes('Natural')) ||
+                voices.find(v => v.lang.startsWith('ko'));
+
             if (preferredVoice) {
                 utterance.voice = preferredVoice;
             }
-            
+
             utterance.lang = 'ko-KR';
             utterance.rate = 1.0; // 자연스러운 속도
             utterance.pitch = 1.0;
-            
+
             utterance.onstart = () => setSpeakingUI(true);
             utterance.onend = () => setSpeakingUI(false);
             utterance.onerror = () => setSpeakingUI(false);
-            
+
             window.speechSynthesis.speak(utterance);
         }
 
@@ -1499,7 +1679,7 @@
             isSpeaking = speaking;
             const btn = document.querySelector('#view-missions .mission-card button');
             if (!btn) return;
-            
+
             if (speaking) {
                 btn.classList.add('bg-orange-500', 'ring-4', 'ring-orange-500/30', 'scale-110');
                 btn.innerHTML = `
@@ -1564,8 +1744,8 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    scales: { 
-                        y: { 
+                    scales: {
+                        y: {
                             beginAtZero: true, max: 100,
                             grid: { color: '#334155' },
                             ticks: { color: '#94a3b8' }
@@ -1595,4 +1775,5 @@
         window.onload = initApp;
     </script>
 </body>
+
 </html>
