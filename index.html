@@ -133,10 +133,9 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-10">
-                <div class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center">
-                    <h3 class="text-lg sm:text-xl font-bold text-slate-300 mb-4">전체 훈련 달성률</h3>
-                    <div class="chart-container"><canvas id="totalProgressChart"></canvas></div>
-                    <div class="mt-4 text-2xl sm:text-3xl font-black text-orange-500" id="total-percentage-text">0%</div>
+                <div class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center justify-center min-h-[200px]">
+                    <h3 class="text-lg sm:text-xl font-bold text-slate-300 mb-2">전체 훈련 달성률</h3>
+                    <div class="text-5xl sm:text-7xl font-black text-orange-500 py-4 sm:py-6" id="total-percentage-text">0%</div>
                 </div>
                 <div class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center w-full overflow-hidden">
                     <h3 class="text-lg sm:text-xl font-bold text-slate-300 mb-4">과목별 달성 현황</h3>
@@ -1545,27 +1544,7 @@
         function updateDashboardCharts() {
             const completedCount = state.completed.size;
             const totalPercent = Math.round((completedCount / state.totalMissions) * 100);
-            document.getElementById('total-percentage-text').textContent = `${totalPercent}% 달성`;
-
-            if (totalChartInstance) totalChartInstance.destroy();
-            const ctxTotal = document.getElementById('totalProgressChart').getContext('2d');
-            totalChartInstance = new Chart(ctxTotal, {
-                type: 'doughnut',
-                data: {
-                    labels: ['달성 완료', '남은 미션'],
-                    datasets: [{
-                        data: [completedCount, state.totalMissions - completedCount],
-                        backgroundColor: ['#10b981', '#1e293b'],
-                        borderWidth: 0, hoverOffset: 4
-                    }]
-                },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, cutout: '75%', 
-                    plugins: { 
-                        legend: { display: false } 
-                    } 
-                }
-            });
+            document.getElementById('total-percentage-text').textContent = `${totalPercent}%`;
 
             const categoryLabels = []; const categoryData = [];
             quizData.forEach(cat => {
