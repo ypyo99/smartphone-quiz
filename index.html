@@ -129,7 +129,7 @@
         <section id="view-dashboard" class="view-section">
             <div class="mb-6 sm:mb-8 bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700">
                 <h2 class="text-xl sm:text-2xl font-bold text-orange-500 mb-2">훈련 현황판 📊</h2>
-                <p class="text-base sm:text-lg text-slate-400 leading-relaxed">과목 버튼을 눌러 미션에 참여해 보세요.</p>
+                <p class="text-base sm:text-lg text-slate-400 leading-relaxed">버튼을 눌러 미션에 참여해 보세요.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-10">
@@ -143,7 +143,7 @@
                 </div>
             </div>
 
-            <h3 class="text-xl sm:text-2xl font-bold text-slate-100 mb-4">도전! 과목 선택하기 👇</h3>
+            <h3 class="text-xl sm:text-2xl font-bold text-slate-100 mb-4">도전! 과 선택하기 👇</h3>
             <!-- 핵심 수정 사항: 모바일에서 한 줄에 두 개(grid-cols-2) 표시 -->
             <div id="category-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 <!-- 과목 카드 렌더링 -->
@@ -219,7 +219,7 @@
                 <div class="text-base sm:text-xl font-bold text-orange-500 bg-orange-900/30 px-3 sm:px-4 py-2 rounded-lg" id="category-progress-badge">0 / 25 완료</div>
             </div>
 
-            <h2 id="mission-category-title" class="text-2xl sm:text-3xl font-black text-slate-100 mb-6 text-center w-full px-2">과목 제목</h2>
+            <h2 id="mission-category-title" class="text-2xl sm:text-3xl font-black text-slate-100 mb-6 text-center w-full px-2">과 제목</h2>
 
             <!-- 슬라이드 카드 컨테이너 -->
             <div id="mission-list" class="flex flex-col items-center justify-center w-full max-w-2xl mx-auto flex-1 pb-10">
@@ -234,7 +234,7 @@
         const quizData = [
             {
                 id: 0,
-                title: "제 1과목: 폰아, 내 말 좀 들어라!",
+                title: "제 1과: 폰아, 내 말 좀 들어라!",
                 subtitle: "기기 기본 조작",
                 icon: "⚙️",
                 missions: [
@@ -267,7 +267,7 @@
             },
             {
                 id: 11,
-                title: "제 2과목: 키보드와 친해지기",
+                title: "제 2과: 키보드와 친해지기",
                 subtitle: "손가락 놀이터 - 45단계 정복",
                 icon: "⌨️",
                 isGame: true,
@@ -279,7 +279,7 @@
             },
             {
                 id: 1,
-                title: "제 3과목: 여보세요? 나야!",
+                title: "제 3과: 여보세요? 나야!",
                 subtitle: "전화 & 연락처",
                 icon: "📲",
                 missions: [
@@ -312,7 +312,7 @@
             },
             {
                 id: 2,
-                title: "제 4과목: 엄지족의 탄생",
+                title: "제 4과: 엄지족의 탄생",
                 subtitle: "문자 메시지",
                 icon: "✉️",
                 missions: [
@@ -345,7 +345,7 @@
             },
             {
                 id: 3,
-                title: "제 5과목: 전국민 수다쟁이",
+                title: "제 5과: 전국민 수다쟁이",
                 subtitle: "카카오톡",
                 icon: "💬",
                 missions: [
@@ -378,7 +378,7 @@
             },
             {
                 id: 4,
-                title: "제 6과목: 나 혼자서도 잘 다녀!",
+                title: "제 6과: 나 혼자서도 잘 다녀!",
                 subtitle: "카카오맵 길찾기",
                 icon: "📍",
                 missions: [
@@ -411,7 +411,7 @@
             },
             {
                 id: 5,
-                title: "제 7과목: 회장님처럼 택시 부르기",
+                title: "제 7과: 회장님처럼 택시 부르기",
                 subtitle: "카카오 T",
                 icon: "🚕",
                 missions: [
@@ -444,7 +444,7 @@
             },
             {
                 id: 6,
-                title: "제 8과목: 인생 샷과 오스카상",
+                title: "제 8과: 인생 샷과 오스카상",
                 subtitle: "카메라 & 갤러리",
                 icon: "📷",
                 missions: [
@@ -477,7 +477,7 @@
             },
             {
                 id: 7,
-                title: "제 9과목: 놀면 뭐하니?",
+                title: "제 9과: 놀면 뭐하니?",
                 subtitle: "유튜브 & 생활 꿀팁",
                 icon: "📺",
                 missions: [
@@ -510,7 +510,7 @@
             },
             {
                 id: 8,
-                title: "제 10과목: 똑똑한 내 친구",
+                title: "제 10과: 똑똑한 내 친구",
                 subtitle: "제미나이(AI) 활용",
                 icon: "🧠",
                 missions: [
@@ -551,7 +551,7 @@
             // 형, 여기가 새로 추가된 10번째 과목 VLLO 미션 25개야!
             {
                 id: 9,
-                title: "갤럭시 AI",
+                title: "제 11과: 갤럭시 AI",
                 subtitle: "내 폰의 숨겨진 인공지능 비서",
                 icon: "🪄",
                 missions: [
@@ -584,7 +584,7 @@
             },
             {
                 id: 10,
-                title: "제 12과목: 나도 이제 영화감독",
+                title: "제 12과: 나도 이제 영화감독",
                 subtitle: "VLLO 앱으로 영상 만들기",
                 icon: "🎬",
                 missions: [
