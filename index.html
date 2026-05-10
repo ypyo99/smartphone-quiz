@@ -903,34 +903,55 @@
                     return cat === "장소";
                 });
 
-                rows.forEach((row, rowIndex) => {
-                    const category = (row.length > 3 && row[3]) ? row[3].replace(/\s+/g, '') : '';
-                    const isNewTeacherBlock = (rowIndex === 0 && row[1] && row[1].trim() !== '');
-                    const isTargetRow = category === "대상" || category === "내용" || category === "활동" || (isNewTeacherBlock && category !== "장소" && !category.includes("진행여부"));
+                const targetRow = rows.find(r => {
+                    const cat = (r.length > 3 && r[3]) ? r[3].replace(/\s+/g, '') : '';
+                    return cat === "대상";
+                });
+                
+                const attendanceRow = rows.find(r => {
+                    const cat = (r.length > 3 && r[3]) ? r[3].replace(/\s+/g, '') : '';
+                    return cat.includes("진행여부") || cat.includes("출석");
+                });
 
-                    if (isTargetRow) {
-                        validColIndices.forEach(colIdx => {
-                            // 수업장소 제외 키워드 체크
-                            if (locationRow && locationRow.length > colIdx && locationRow[colIdx]) {
-                                const locVal = locationRow[colIdx].trim();
-                                if (['공휴일', '소양교육', '대체휴일', '대체공휴일'].some(kw => locVal.includes(kw))) return;
-                            }
+                if (!targetRow) return;
 
-                            const cellVal = (row.length > colIdx && row[colIdx]) ? row[colIdx].trim() : "";
-                            if (!cellVal || cellVal === '-' || cellVal.includes('대상자 없음')) return;
-
-                            let cleanTarget = cellVal.replace(/대상자\s*없음/g, '-').replace(/대상자\s*발굴/g, '대상자발굴');
-                            const names = cleanTarget.split(/[/, \n()]+/).filter(n => n.trim().length > 0 && n !== '-');
-
-                            names.forEach(name => {
-                                let cleanName = name.replace(/\s+/g, '');
-                                if (['대상자발굴', '수업준비', '복지관이동', '복지관으로이동', '이동시간', '자체학습', '보조강사', '학습', '대상자', '대상자없음', '오전수업', '컴1/보조', '컴기초1반', '컴활용/보조', '기초', '도선복지관', '경로당', '성원'].some(kw => cleanName.includes(kw)) || cleanName.endsWith('날') || cleanName.endsWith('절')) return;
-                                if (cleanName.length >= 2 && isNaN(cleanName)) {
-                                    namesSet.add(cleanName);
-                                }
-                            });
-                        });
+                validColIndices.forEach(colIdx => {
+                    // 수업장소 제외 키워드 체크
+                    if (locationRow && locationRow.length > colIdx && locationRow[colIdx]) {
+                        const locVal = locationRow[colIdx].trim();
+                        if (['공휴일', '소양교육', '대체휴일', '대체공휴일', '연차', '휴가'].some(kw => locVal.includes(kw))) return;
                     }
+
+                    const targetVal = (targetRow.length > colIdx && targetRow[colIdx]) ? targetRow[colIdx].trim() : "";
+                    if (!targetVal || targetVal === '-' || targetVal.includes('대상자 없음')) return;
+
+                    const attendanceVal = (attendanceRow && attendanceRow.length > colIdx && attendanceRow[colIdx]) ? attendanceRow[colIdx].trim() : "";
+
+                    let cleanTarget = targetVal.replace(/대상자\s*없음/g, '-').replace(/대상자\s*발굴/g, '대상자발굴');
+                    const names = cleanTarget.split(/[/, \n()]+/).map(n => n.trim()).filter(n => n.length > 0 && n !== '-');
+                    const attendances = attendanceVal.split(/[\n,]+/).map(a => a.trim()).filter(a => a.length > 0);
+
+                    names.forEach((name, idx) => {
+                        let cleanName = name.replace(/\s+/g, '');
+                        if (['대상자발굴', '수업준비', '복지관이동', '복지관으로이동', '이동시간', '자체학습', '보조강사', '학습', '대상자', '대상자없음', '오전수업', '컴1/보조', '컴기초1반', '컴활용/보조', '기초', '도선복지관', '경로당', '성원'].some(kw => cleanName.includes(kw)) || cleanName.endsWith('날') || cleanName.endsWith('절')) return;
+                        
+                        // 진행여부 확인 (한 번이라도 수업을 한 적이 있는 = 출석한 경우)
+                        let att = attendances.length > idx ? attendances[idx] : (attendances.length === 1 ? attendances[0] : null);
+                        let didAttend = false;
+                        
+                        if (att) {
+                            // 1/0, 0/0, 0, 결석, 취소 등은 출석 안 한 것으로 간주
+                            if (att === '1/0' || att === '0/0' || att === '0' || att === '결석' || att === 'X' || att === 'x' || att === '취소' || att.includes('취소')) {
+                                didAttend = false;
+                            } else {
+                                didAttend = true; // 1/1, 1, 출석 등 무언가 값이 쓰여있고 결석이 아니면 출석으로 간주
+                            }
+                        }
+
+                        if (didAttend && cleanName.length >= 2 && isNaN(cleanName)) {
+                            namesSet.add(cleanName);
+                        }
+                    });
                 });
             });
             return Array.from(namesSet);
