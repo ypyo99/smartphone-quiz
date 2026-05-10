@@ -716,7 +716,12 @@
             const selectedTeam = document.getElementById('sync-team-select').value || localStorage.getItem('sm_gym_last_team');
             const selectedTeacher = document.getElementById('sync-teacher-select').value || localStorage.getItem('sm_gym_last_teacher');
 
-            let filteredStudents = students.filter(s => s.team === selectedTeam && !s.name.endsWith('날') && !s.name.endsWith('절'));
+            let filteredStudents = students.filter(s => 
+                s.team === selectedTeam && 
+                s.teachers && s.teachers.includes(selectedTeacher) && 
+                !s.name.endsWith('날') && 
+                !s.name.endsWith('절')
+            );
 
             // 이름순 정렬
             filteredStudents.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
@@ -793,32 +798,61 @@
 
                 const names = extractStudents(text, selectedTeacher);
 
+                const fetchedNamesSet = new Set(names.map(n => n.trim()));
                 const enrollPromises = [];
-                const currentStudentKeys = new Set(state.currentStudents.map(s => `${s.team}_${s.name}`));
 
-                for (const name of names) {
-                    const cleanName = name.trim();
-                    const key = `${selectedTeam}_${cleanName}`;
+                state.currentStudents.forEach(student => {
+                    if (student.team === selectedTeam) {
+                        let updated = false;
+                        if (!student.teachers) student.teachers = [];
 
-                    if (!currentStudentKeys.has(key)) {
-                        currentStudentKeys.add(key);
-
-                        const studentId = 'student_' + Date.now() + Math.floor(Math.random() * 1000000);
-                        const newStudent = {
-                            name: cleanName, team: selectedTeam, completed: [],
-                            createdAt: Date.now(), updatedAt: Date.now()
-                        };
-
-                        if (useFirebase && state.userId) {
-                            const studentRef = doc(db, 'artifacts', appId, 'users', state.userId, 'students', studentId);
-                            enrollPromises.push(setDoc(studentRef, newStudent));
+                        if (fetchedNamesSet.has(student.name)) {
+                            if (!student.teachers.includes(selectedTeacher)) {
+                                student.teachers.push(selectedTeacher);
+                                updated = true;
+                            }
+                            fetchedNamesSet.delete(student.name);
                         } else {
-                            newStudent.id = studentId;
-                            state.currentStudents.push(newStudent);
-                            saveStudentsLocal();
+                            const tIdx = student.teachers.indexOf(selectedTeacher);
+                            if (tIdx > -1) {
+                                student.teachers.splice(tIdx, 1);
+                                updated = true;
+                            }
                         }
-                        totalAdded++;
+
+                        if (updated) {
+                            student.updatedAt = Date.now();
+                            if (useFirebase && state.userId) {
+                                const studentRef = doc(db, 'artifacts', appId, 'users', state.userId, 'students', student.id);
+                                enrollPromises.push(setDoc(studentRef, student, { merge: true }));
+                            }
+                        }
                     }
+                });
+
+                fetchedNamesSet.forEach(cleanName => {
+                    const studentId = 'student_' + Date.now() + Math.floor(Math.random() * 1000000);
+                    const newStudent = {
+                        id: studentId,
+                        name: cleanName, 
+                        team: selectedTeam, 
+                        teachers: [selectedTeacher], 
+                        completed: [],
+                        createdAt: Date.now(), 
+                        updatedAt: Date.now()
+                    };
+
+                    state.currentStudents.push(newStudent);
+                    totalAdded++;
+
+                    if (useFirebase && state.userId) {
+                        const studentRef = doc(db, 'artifacts', appId, 'users', state.userId, 'students', studentId);
+                        enrollPromises.push(setDoc(studentRef, newStudent));
+                    }
+                });
+
+                if (!useFirebase) {
+                    saveStudentsLocal();
                 }
 
                 if (useFirebase && enrollPromises.length > 0) {
