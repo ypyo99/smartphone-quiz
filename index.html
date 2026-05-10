@@ -210,6 +210,9 @@
                             class="h-12 px-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-base font-bold text-slate-100 bg-slate-700 flex-1">
                             <option value="">선생님 선택</option>
                         </select>
+                        <button id="btn-refresh-teachers" class="w-12 h-12 bg-slate-700 hover:bg-slate-600 text-white rounded-xl border border-slate-600 flex items-center justify-center transition-colors shadow-lg" title="명단 새로고침">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+                        </button>
                     </div>
 
                     <button id="btn-fetch-sheets"
@@ -364,8 +367,13 @@
     </main>
 
     <script type="module">
-        // 10개 과목 총 257개 문제 완벽 복구 및 추가
-        const quizData = [
+        // 앱 버전 및 데이터 캐시 키
+        const APP_VERSION = "1.5.0"; // 데이터 변경 시 이 버전을 올리면 강제 업데이트됩니다.
+        const CACHE_KEY_QUIZ = 'sm_gym_quiz_data';
+        const CACHE_KEY_VER = 'sm_gym_quiz_version';
+
+        // 기본 공부 내용 (초기 설치 또는 업데이트 시 사용)
+        const defaultQuizData = [
             {
                 id: 0,
                 title: "제 1과: 폰아, 내 말 좀 들어라!",
@@ -876,6 +884,32 @@
             }
         ];
 
+        // 실제 앱에서 사용할 데이터 변수
+        let quizData = [];
+
+        function initQuizData() {
+            const cachedVer = localStorage.getItem(CACHE_KEY_VER);
+            const cachedData = localStorage.getItem(CACHE_KEY_QUIZ);
+
+            if (cachedVer === APP_VERSION && cachedData) {
+                try {
+                    quizData = JSON.parse(cachedData);
+                    console.log("로컬 캐시에서 공부 내용을 불러왔습니다. (버전: " + APP_VERSION + ")");
+                } catch (e) {
+                    quizData = defaultQuizData;
+                }
+            } else {
+                // 버전이 다르거나 캐시가 없으면 기본 데이터 사용 및 캐싱
+                quizData = defaultQuizData;
+                localStorage.setItem(CACHE_KEY_QUIZ, JSON.stringify(quizData));
+                localStorage.setItem(CACHE_KEY_VER, APP_VERSION);
+                console.log("새로운 공부 내용을 저장했습니다. (버전: " + APP_VERSION + ")");
+            }
+        }
+        
+        // 데이터 초기화 실행
+        initQuizData();
+
         let state = {
             completed: new Set(),
             currentCategory: null,
@@ -961,7 +995,11 @@
 
             document.getElementById('btn-teacher-dashboard').addEventListener('click', goToTeacherDashboard);
             document.getElementById('btn-fetch-sheets').addEventListener('click', fetchStudentsFromSheets);
-            document.getElementById('sync-team-select').addEventListener('change', loadTeachersList);
+            document.getElementById('sync-team-select').addEventListener('change', () => loadTeachersList(false));
+            document.getElementById('btn-refresh-teachers').addEventListener('click', () => {
+                vibrate(30);
+                loadTeachersList(true); // 강제 새로고침
+            });
 
             // 스마트폰 터치 스와이프(좌우 넘기기) 이벤트 추가
             const missionView = document.getElementById('view-missions');
@@ -1029,7 +1067,7 @@
             localStorage.setItem('sm_gym_students_local', JSON.stringify(state.currentStudents));
         }
 
-        async function loadTeachersList() {
+        async function loadTeachersList(forceFetch = false) {
             const selectedTeam = document.getElementById('sync-team-select').value;
             const selectTeacher = document.getElementById('sync-teacher-select');
 
@@ -1039,6 +1077,11 @@
 
             if (cachedTeachers) {
                 populateTeacherDropdown(JSON.parse(cachedTeachers));
+                // 강제 업데이트가 아니고 캐시가 있으면 fetch 생략
+                if (!forceFetch) {
+                    console.log(`[${selectedTeam}] 캐시된 명단을 사용합니다.`);
+                    return;
+                }
             } else {
                 selectTeacher.innerHTML = '<option value="">선생님 선택</option>';
             }
@@ -1046,6 +1089,7 @@
             if (!sheetUrls[selectedTeam]) return;
 
             try {
+                console.log(`[${selectedTeam}] 최신 명단을 읽어오는 중...`);
                 const res = await fetch(`${sheetUrls[selectedTeam]}&t=${Date.now()}`);
                 if (!res.ok) throw new Error('네트워크 응답 오류');
                 const text = await res.text();
