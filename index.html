@@ -894,22 +894,35 @@
             const headerRow = data[headerRowIndex];
             const validColIndices = [];
 
-            // 오늘 기준으로 30일(과거 한 달) 이내만
+            // 오늘 기준으로 과거 60일, 미래 60일 데이터 모두 허용
             const today = new Date();
             today.setHours(23, 59, 59, 999);
+            
             const pastDateLimit = new Date();
-            pastDateLimit.setDate(today.getDate() - 30);
+            pastDateLimit.setDate(today.getDate() - 60);
             pastDateLimit.setHours(0, 0, 0, 0);
+
+            const futureDateLimit = new Date();
+            futureDateLimit.setDate(today.getDate() + 60);
+            futureDateLimit.setHours(23, 59, 59, 999);
 
             for (let j = 4; j < headerRow.length; j++) {
                 if (headerRow[j] && headerRow[j].trim() !== '') {
                     const match = headerRow[j].trim().match(/(\d+)\s*[/.]\s*(\d+)/);
                     if (match) {
                         let currentYear = today.getFullYear();
-                        let d = new Date(currentYear, parseInt(match[1]) - 1, parseInt(match[2]));
-                        if (d > today) d.setFullYear(currentYear - 1); // 작년 데이터 처리
+                        let month = parseInt(match[1]) - 1;
+                        let date = parseInt(match[2]);
+                        let d = new Date(currentYear, month, date);
+                        
+                        // 연말/연초(12월-1월) 미래/과거 데이터 년도 보정
+                        if (today.getMonth() >= 10 && month <= 1) {
+                            d.setFullYear(currentYear + 1);
+                        } else if (today.getMonth() <= 1 && month >= 10) {
+                            d.setFullYear(currentYear - 1);
+                        }
 
-                        if (d >= pastDateLimit && d <= today) {
+                        if (d >= pastDateLimit && d <= futureDateLimit) {
                             validColIndices.push(j);
                         }
                     }
@@ -924,7 +937,8 @@
                 const row = data[i];
                 if (!row || row.length < 2) continue;
                 if (row[1] && row[1].trim() !== '') {
-                    currentTeacherName = row[1].trim();
+                    // 강사 이름에서 모든 공백을 제거하여 저장
+                    currentTeacherName = row[1].replace(/\s+/g, '');
                 }
                 if (currentTeacherName) {
                     if (!teacherGroups.has(currentTeacherName)) teacherGroups.set(currentTeacherName, []);
@@ -933,12 +947,14 @@
             }
 
             teacherGroups.forEach((rows, teacherName) => {
-                if (filterTeacher && teacherName !== filterTeacher) return;
+                let cleanFilterTeacher = filterTeacher ? filterTeacher.replace(/\s+/g, '') : '';
+                // '최성자/이화수' 같이 두 명이 들어간 경우도 있으므로 includes로 체크
+                if (cleanFilterTeacher && !teacherName.includes(cleanFilterTeacher)) return;
 
                 for (let i = 0; i < rows.length; i++) {
                     const row = rows[i];
                     const cat = (row.length > 3 && row[3]) ? row[3].replace(/\s+/g, '') : '';
-                    if (cat === "대상") {
+                    if (cat === "대상" || cat === "대상자") {
                         let locationRow = null;
                         if (i + 1 < rows.length) {
                             const nextCat = (rows[i + 1].length > 3 && rows[i + 1][3]) ? rows[i + 1][3].replace(/\s+/g, '') : '';
