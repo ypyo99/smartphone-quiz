@@ -162,7 +162,8 @@
                 </div>
 
                 <!-- 타이틀 (줄 바꿈) -->
-                <h1 class="text-base sm:text-xl md:text-2xl font-black tracking-tight truncate text-orange-500">🎉 스마트폰 명랑
+                <h1 class="text-base sm:text-xl md:text-2xl font-black tracking-tight truncate text-orange-500">🎉 스마트폰
+                    명랑
                     운동회</h1>
             </div>
 
@@ -262,7 +263,8 @@
                     class="bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700 flex flex-col items-center w-full overflow-hidden">
                     <h3 class="text-lg sm:text-xl font-bold text-slate-300 mb-4">과목별 달성 현황</h3>
                     <div class="w-full overflow-x-auto pb-2">
-                        <div class="chart-container" style="min-width: 500px;"><canvas id="categoryProgressChart"></canvas></div>
+                        <div class="chart-container" style="min-width: 500px;"><canvas
+                                id="categoryProgressChart"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -716,10 +718,10 @@
             const selectedTeam = document.getElementById('sync-team-select').value || localStorage.getItem('sm_gym_last_team');
             const selectedTeacher = document.getElementById('sync-teacher-select').value || localStorage.getItem('sm_gym_last_teacher');
 
-            let filteredStudents = students.filter(s => 
-                s.team === selectedTeam && 
-                s.teachers && s.teachers.includes(selectedTeacher) && 
-                !s.name.endsWith('날') && 
+            let filteredStudents = students.filter(s =>
+                s.team === selectedTeam &&
+                s.teachers && s.teachers.includes(selectedTeacher) &&
+                !s.name.endsWith('날') &&
                 !s.name.endsWith('절')
             );
 
@@ -834,11 +836,11 @@
                     const studentId = 'student_' + Date.now() + Math.floor(Math.random() * 1000000);
                     const newStudent = {
                         id: studentId,
-                        name: cleanName, 
-                        team: selectedTeam, 
-                        teachers: [selectedTeacher], 
+                        name: cleanName,
+                        team: selectedTeam,
+                        teachers: [selectedTeacher],
                         completed: [],
-                        createdAt: Date.now(), 
+                        createdAt: Date.now(),
                         updatedAt: Date.now()
                     };
 
@@ -875,6 +877,7 @@
                 showAlert(`[${selectedTeam}] '${selectedTeacher}' 선생님 반\n학생 이름 읽기 완료!\n새로운 어르신 ${totalAdded}명이 추가되었습니다.`);
             }
         }
+
 
         function extractStudents(text, filterTeacher) {
             const results = Papa.parse(text, { header: false, skipEmptyLines: true });
@@ -938,10 +941,10 @@
                     if (cat === "대상") {
                         let locationRow = null;
                         if (i + 1 < rows.length) {
-                            const nextCat = (rows[i+1].length > 3 && rows[i+1][3]) ? rows[i+1][3].replace(/\s+/g, '') : '';
-                            if (nextCat === "장소") locationRow = rows[i+1];
+                            const nextCat = (rows[i + 1].length > 3 && rows[i + 1][3]) ? rows[i + 1][3].replace(/\s+/g, '') : '';
+                            if (nextCat === "장소") locationRow = rows[i + 1];
                         }
-                        
+
                         validColIndices.forEach(colIdx => {
                             if (locationRow && locationRow.length > colIdx && locationRow[colIdx]) {
                                 const locVal = locationRow[colIdx].trim();
@@ -957,7 +960,7 @@
                             names.forEach((name) => {
                                 let cleanName = name.replace(/\s+/g, '');
                                 if (['대상자발굴', '수업준비', '복지관이동', '복지관으로이동', '이동시간', '자체학습', '보조강사', '학습', '대상자', '대상자없음', '오전수업', '컴1/보조', '컴기초1반', '컴활용/보조', '기초', '도선복지관', '경로당', '성원'].some(kw => cleanName.includes(kw)) || cleanName.endsWith('날') || cleanName.endsWith('절')) return;
-                                
+
                                 if (cleanName.length >= 2 && isNaN(cleanName)) {
                                     namesSet.add(cleanName);
                                 }
