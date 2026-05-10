@@ -891,12 +891,12 @@
             const headerRow = data[headerRowIndex];
             const validColIndices = [];
 
-            // 오늘 기준으로 30일(과거 한 달) 이내만
+            // 오늘 기준으로 60일(과거 두 달) 이내만
             const today = new Date();
             today.setHours(23, 59, 59, 999);
-            const oneMonthAgo = new Date();
-            oneMonthAgo.setDate(today.getDate() - 30);
-            oneMonthAgo.setHours(0, 0, 0, 0);
+            const pastDateLimit = new Date();
+            pastDateLimit.setDate(today.getDate() - 60);
+            pastDateLimit.setHours(0, 0, 0, 0);
 
             for (let j = 4; j < headerRow.length; j++) {
                 if (headerRow[j] && headerRow[j].trim() !== '') {
@@ -906,7 +906,7 @@
                         let d = new Date(currentYear, parseInt(match[1]) - 1, parseInt(match[2]));
                         if (d > today) d.setFullYear(currentYear - 1); // 작년 데이터 처리
 
-                        if (d >= oneMonthAgo && d <= today) {
+                        if (d >= pastDateLimit && d <= today) {
                             validColIndices.push(j);
                         }
                     }
@@ -965,24 +965,11 @@
                     const names = cleanTarget.split(/[/, \n()]+/).map(n => n.trim()).filter(n => n.length > 0 && n !== '-');
                     const attendances = attendanceVal.split(/[\n,]+/).map(a => a.trim()).filter(a => a.length > 0);
 
-                    names.forEach((name, idx) => {
+                    names.forEach((name) => {
                         let cleanName = name.replace(/\s+/g, '');
                         if (['대상자발굴', '수업준비', '복지관이동', '복지관으로이동', '이동시간', '자체학습', '보조강사', '학습', '대상자', '대상자없음', '오전수업', '컴1/보조', '컴기초1반', '컴활용/보조', '기초', '도선복지관', '경로당', '성원'].some(kw => cleanName.includes(kw)) || cleanName.endsWith('날') || cleanName.endsWith('절')) return;
                         
-                        // 진행여부 확인 (한 번이라도 수업을 한 적이 있는 = 출석한 경우)
-                        let att = attendances.length > idx ? attendances[idx] : (attendances.length === 1 ? attendances[0] : null);
-                        let didAttend = false;
-                        
-                        if (att) {
-                            // 1/0, 0/0, 0, 결석, 취소 등은 출석 안 한 것으로 간주
-                            if (att === '1/0' || att === '0/0' || att === '0' || att === '결석' || att === 'X' || att === 'x' || att === '취소' || att.includes('취소')) {
-                                didAttend = false;
-                            } else {
-                                didAttend = true; // 1/1, 1, 출석 등 무언가 값이 쓰여있고 결석이 아니면 출석으로 간주
-                            }
-                        }
-
-                        if (didAttend && cleanName.length >= 2 && isNaN(cleanName)) {
+                        if (cleanName.length >= 2 && isNaN(cleanName)) {
                             namesSet.add(cleanName);
                         }
                     });
