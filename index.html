@@ -368,9 +368,10 @@
 
     <script type="module">
         // 앱 버전 및 데이터 캐시 키
-        const APP_VERSION = "1.5.0"; // 데이터 변경 시 이 버전을 올리면 강제 업데이트됩니다.
+        const APP_VERSION = "2.0.0"; // 구글 시트 연동 버전
         const CACHE_KEY_QUIZ = 'sm_gym_quiz_data';
         const CACHE_KEY_VER = 'sm_gym_quiz_version';
+        const QUIZ_DATA_URL = 'https://docs.google.com/spreadsheets/d/1zXDFnGyWSEh1e6zLEOSRlyWyaAe_jwNHbbAu2ZF5tbE/export?format=csv&gid=0';
 
         // 기본 공부 내용 (초기 설치 또는 업데이트 시 사용)
         const defaultQuizData = [
@@ -888,22 +889,58 @@
         let quizData = [];
 
         function initQuizData() {
-            const cachedVer = localStorage.getItem(CACHE_KEY_VER);
             const cachedData = localStorage.getItem(CACHE_KEY_QUIZ);
-
-            if (cachedVer === APP_VERSION && cachedData) {
+            
+            // 우선 캐시된 데이터가 있으면 즉시 로드 (빠른 시작)
+            if (cachedData) {
                 try {
                     quizData = JSON.parse(cachedData);
-                    console.log("로컬 캐시에서 공부 내용을 불러왔습니다. (버전: " + APP_VERSION + ")");
+                    console.log("로컬 캐시에서 공부 내용을 불러왔습니다.");
                 } catch (e) {
                     quizData = defaultQuizData;
                 }
             } else {
-                // 버전이 다르거나 캐시가 없으면 기본 데이터 사용 및 캐싱
                 quizData = defaultQuizData;
-                localStorage.setItem(CACHE_KEY_QUIZ, JSON.stringify(quizData));
-                localStorage.setItem(CACHE_KEY_VER, APP_VERSION);
-                console.log("새로운 공부 내용을 저장했습니다. (버전: " + APP_VERSION + ")");
+            }
+
+            // 백그라운드에서 구글 시트 최신 데이터 확인
+            fetchQuizDataFromSheets();
+        }
+
+        async function fetchQuizDataFromSheets() {
+            try {
+                const res = await fetch(`${QUIZ_DATA_URL}&t=${Date.now()}`);
+                if (!res.ok) throw new Error('네트워크 응답 오류');
+                const text = await res.text();
+
+                // CSV 파싱
+                const results = Papa.parse(text, { header: true, skipEmptyLines: true });
+                const data = results.data;
+
+                if (data && data.length > 0) {
+                    const newQuizData = data.map(row => ({
+                        id: parseInt(row.ID),
+                        title: row.Title,
+                        subtitle: row.Subtitle,
+                        icon: row.Icon,
+                        isGame: row.IsGame === 'TRUE' || row.IsGame === true,
+                        missions: row.Missions.split('\n').map(m => m.trim()).filter(m => m.length > 0)
+                    }));
+
+                    // 데이터가 유효하면 캐시 업데이트 및 적용
+                    if (newQuizData.length > 0) {
+                        localStorage.setItem(CACHE_KEY_QUIZ, JSON.stringify(newQuizData));
+                        quizData = newQuizData;
+                        console.log("구글 시트에서 최신 공부 내용을 동기화했습니다.");
+                        
+                        // 현재 대시보드라면 리렌더링
+                        if (document.getElementById('view-dashboard').classList.contains('active')) {
+                            renderCategoryGrid();
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("공부 내용 동기화 실패:", e);
             }
         }
         
