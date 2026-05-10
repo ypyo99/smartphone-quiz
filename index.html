@@ -331,9 +331,7 @@
                             placeholder="똑같이 써보세요" autocomplete="off">
                     </div>
 
-                    <div id="game-feedback-msg" class="h-6 text-sm font-bold text-slate-500">
-                        아래 키보드로 천천히 눌러보세요
-                    </div>
+                    <!-- 피드백 메시지 영역 삭제 -->
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 mb-10">
@@ -1135,14 +1133,11 @@
             const val = e.target.value;
             const category = quizData.find(c => c.id === state.currentCategory);
             const target = category.missions[gameIdx];
-            const feedbackMsg = document.getElementById('game-feedback-msg');
             const gameCard = document.getElementById('game-card');
 
             if (val === target) {
                 isGameTransitioning = true;
                 vibrate(50);
-                feedbackMsg.innerText = "참 잘하셨어요! 다음 문제~";
-                feedbackMsg.className = "h-6 text-sm font-bold text-green-400";
                 gameCard.classList.add('correct-flash');
 
                 const missionId = `${category.id}-${gameIdx}`;
@@ -1165,15 +1160,8 @@
                         isGameTransitioning = false;
                     }
                 }, 600);
-            } else if (target.startsWith(val)) {
-                feedbackMsg.innerText = "좋아요, 계속 써보세요!";
-                feedbackMsg.className = "h-6 text-sm font-bold text-blue-400";
-            } else {
-                if (val.length > 0) {
-                    feedbackMsg.innerText = "글자가 달라요. 지우고 다시 써보세요.";
-                    feedbackMsg.className = "h-6 text-sm font-bold text-rose-400";
-                }
             }
+            // 피드백 메시지 로직 삭제
         }
 
         function updateGameProgressBadge() {
