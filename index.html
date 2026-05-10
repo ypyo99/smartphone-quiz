@@ -894,17 +894,13 @@
             const headerRow = data[headerRowIndex];
             const validColIndices = [];
 
-            // 오늘 기준으로 과거 60일, 미래 60일 데이터 모두 허용
+            // 오늘 기준으로 과거 30일(한달 전) 데이터만 허용
             const today = new Date();
             today.setHours(23, 59, 59, 999);
             
             const pastDateLimit = new Date();
-            pastDateLimit.setDate(today.getDate() - 60);
+            pastDateLimit.setDate(today.getDate() - 30);
             pastDateLimit.setHours(0, 0, 0, 0);
-
-            const futureDateLimit = new Date();
-            futureDateLimit.setDate(today.getDate() + 60);
-            futureDateLimit.setHours(23, 59, 59, 999);
 
             for (let j = 4; j < headerRow.length; j++) {
                 if (headerRow[j] && headerRow[j].trim() !== '') {
@@ -922,7 +918,7 @@
                             d.setFullYear(currentYear - 1);
                         }
 
-                        if (d >= pastDateLimit && d <= futureDateLimit) {
+                        if (d >= pastDateLimit && d <= today) {
                             validColIndices.push(j);
                         }
                     }
