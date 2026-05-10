@@ -891,11 +891,11 @@
             const headerRow = data[headerRowIndex];
             const validColIndices = [];
 
-            // 오늘 기준으로 60일(과거 두 달) 이내만
+            // 오늘 기준으로 30일(과거 한 달) 이내만
             const today = new Date();
             today.setHours(23, 59, 59, 999);
             const pastDateLimit = new Date();
-            pastDateLimit.setDate(today.getDate() - 60);
+            pastDateLimit.setDate(today.getDate() - 30);
             pastDateLimit.setHours(0, 0, 0, 0);
 
             for (let j = 4; j < headerRow.length; j++) {
