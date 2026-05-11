@@ -208,7 +208,7 @@
                             <option value="">선생님 선택</option>
                         </select>
                         <button id="btn-refresh-teachers"
-                            class="w-12 h-12 bg-slate-700 hover:bg-slate-600 text-white rounded-xl border border-slate-600 flex items-center justify-center transition-all duration-150 shadow-lg active:scale-90"
+                            class="w-12 h-12 bg-slate-700 hover:bg-slate-600 text-white rounded-xl border border-slate-600 flex items-center justify-center transition-colors shadow-lg"
                             title="명단 새로고침">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
@@ -220,7 +220,7 @@
                     </div>
 
                     <button id="btn-fetch-sheets"
-                        class="h-12 bg-orange-600 hover:bg-orange-500 text-white px-4 rounded-xl font-bold transition-all duration-150 whitespace-nowrap w-full flex items-center justify-center gap-2 text-base shadow-lg active:scale-[0.98]">
+                        class="h-12 bg-orange-600 hover:bg-orange-500 text-white px-4 rounded-xl font-bold transition-colors whitespace-nowrap w-full flex items-center justify-center gap-2 text-base shadow-lg">
                         <span class="text-lg">🔄</span> 학생 이름 읽기
                     </button>
                 </div>
@@ -388,7 +388,7 @@
             if (cachedData) {
                 try {
                     quizData = JSON.parse(cachedData);
-                    console.log("로컬 캐시에서 공부 내용을 불러왔습니다.");
+                    console.log("로컬 캐시에서 학습 데이터를 불러왔습니다.");
                 } catch (e) {
                     quizData = [];
                 }
@@ -428,7 +428,7 @@
                     if (newQuizData.length > 0) {
                         localStorage.setItem(CACHE_KEY_QUIZ, JSON.stringify(newQuizData));
                         quizData = newQuizData;
-                        console.log("구글 시트에서 최신 공부 내용을 동기화했습니다.");
+                        console.log("구글 시트에서 최신 학습 내용을 동기화했습니다.");
 
                         if (typeof state !== 'undefined' && state) {
                             state.totalMissions = quizData.reduce((acc, cat) => acc + cat.missions.length, 0);
@@ -447,7 +447,7 @@
                     }
                 }
             } catch (e) {
-                console.error("공부 내용 동기화 실패:", e);
+                console.error("학습 내용 동기화 실패:", e);
             }
         }
 
@@ -772,7 +772,7 @@
 
                 const card = document.createElement('div');
                 // 다크 모드에 어울리는 카드 스타일
-                card.className = "bg-slate-800 p-3 sm:p-4 rounded-xl shadow-lg border border-slate-700 cursor-pointer hover:border-orange-500 hover:shadow-orange-500/10 transition-all duration-150 flex flex-col justify-between items-center group relative min-h-[5rem] gap-2 active:scale-95";
+                card.className = "bg-slate-800 p-3 sm:p-4 rounded-xl shadow-lg border border-slate-700 cursor-pointer hover:border-orange-500 hover:shadow-orange-500/10 transition-all flex flex-col justify-between items-center group relative min-h-[5rem] gap-2";
 
                 card.innerHTML = `
                     <div class="w-full text-center truncate">
@@ -782,7 +782,7 @@
                         <div class="w-10 h-10 rounded-full border-[3px] border-slate-700 flex items-center justify-center font-bold text-orange-500 bg-slate-900 text-xs shrink-0">
                             ${percent}%
                         </div>
-                        <button type="button" class="delete-btn w-10 h-10 rounded-full bg-red-900/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-150 flex items-center justify-center border border-red-900/30 shrink-0 active:scale-90" title="삭제">
+                        <button type="button" class="delete-btn w-10 h-10 rounded-full bg-red-900/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center border border-red-900/30 shrink-0" title="삭제">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                     </div>
@@ -1083,7 +1083,7 @@
                 const percent = Math.round((completedInCategory / totalInCategory) * 100);
 
                 const card = document.createElement('div');
-                card.className = "bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-700 cursor-pointer hover:bg-slate-700 hover:border-orange-500 transition-all transform hover:-translate-y-1 text-center flex flex-col justify-between h-full";
+                card.className = "bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-700 cursor-pointer hover:bg-slate-700 hover:border-orange-500 transition-all duration-150 transform hover:-translate-y-1 active:scale-95 text-center flex flex-col justify-between h-full";
                 card.onclick = () => showCategoryMissions(category.id);
 
                 card.innerHTML = `
