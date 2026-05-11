@@ -228,7 +228,7 @@
                 <div id="sheets-loading"
                     class="hidden text-center py-6 text-orange-500 font-medium flex-col items-center">
                     <div class="loader"></div>
-                    <span id="loading-message" class="text-sm">데이터를 분석 중입니다...</span>
+                    <span id="loading-message" class="text-sm">대상자 데이터를 읽고 있습니다.</span>
                 </div>
             </div>
 
@@ -441,6 +441,9 @@
                                 updateDashboardCharts();
                             }
                         }
+
+                        // 학습 데이터 불러오기 완료 팝업
+                        showAlert('📚 구글 시트에서 최신 학습 데이터를 성공적으로 불러왔습니다.');
                     }
                 }
             } catch (e) {
@@ -472,29 +475,52 @@
             '3팀': 'https://docs.google.com/spreadsheets/d/1xnKOOPcsTDsrxcXydxxEg3KO4hPJFyYkKmg749rZcv8/export?format=csv&gid=55984324'
         };
 
+        let modalTimeout = null;
+
         // 커스텀 팝업(모달) 함수
-        function showModal(title, message, isConfirm = false, onConfirm = null) {
+        function showModal(title, message, isConfirm = false, onConfirm = null, autoDismiss = false) {
             document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-message').innerHTML = message;
             const modal = document.getElementById('custom-modal');
             const btnCancel = document.getElementById('modal-btn-cancel');
             const btnConfirm = document.getElementById('modal-btn-confirm');
+            const modalButtons = document.getElementById('modal-buttons');
+
+            if (modalTimeout) {
+                clearTimeout(modalTimeout);
+                modalTimeout = null;
+            }
+
+            const executeConfirm = () => {
+                modal.classList.remove('show');
+                if (onConfirm) onConfirm();
+            };
 
             if (isConfirm) {
+                modalButtons.classList.remove('hidden');
+                modalButtons.classList.add('flex');
                 btnCancel.classList.remove('hidden');
                 btnCancel.onclick = () => modal.classList.remove('show');
-                btnConfirm.onclick = () => {
-                    modal.classList.remove('show');
-                    if (onConfirm) onConfirm();
-                };
+                btnConfirm.onclick = executeConfirm;
             } else {
-                btnCancel.classList.add('hidden');
-                btnConfirm.onclick = () => modal.classList.remove('show');
+                // 확인 버튼만 있는 팝업(showAlert 등)이면서 autoDismiss가 true일 때
+                if (autoDismiss && !onConfirm) {
+                    modalButtons.classList.add('hidden');
+                    modalButtons.classList.remove('flex');
+                    modalTimeout = setTimeout(() => {
+                        executeConfirm();
+                    }, 2000); // 2초 뒤 자동 닫힘
+                } else {
+                    modalButtons.classList.remove('hidden');
+                    modalButtons.classList.add('flex');
+                    btnCancel.classList.add('hidden');
+                    btnConfirm.onclick = executeConfirm;
+                }
             }
             modal.classList.add('show');
         }
 
-        function showAlert(msg) { showModal('알림', msg); }
+        function showAlert(msg, autoDismiss = true) { showModal('알림', msg, false, null, autoDismiss); }
         function showConfirm(msg, callback) { showModal('확인', msg, true, callback); }
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -539,6 +565,13 @@
             document.getElementById('btn-teacher-dashboard').addEventListener('click', goToTeacherDashboard);
             document.getElementById('btn-fetch-sheets').addEventListener('click', fetchStudentsFromSheets);
             document.getElementById('sync-team-select').addEventListener('change', () => loadTeachersList(false));
+            document.getElementById('sync-teacher-select').addEventListener('change', () => {
+                const selectedTeacher = document.getElementById('sync-teacher-select').value;
+                if (selectedTeacher) {
+                    localStorage.setItem('sm_gym_last_teacher', selectedTeacher);
+                    renderStudentList(state.currentStudents);
+                }
+            });
             document.getElementById('btn-refresh-teachers').addEventListener('click', () => {
                 vibrate(30);
                 loadTeachersList(true); // 강제 새로고침
@@ -640,6 +673,11 @@
                 const teachers = extractTeachers(text);
                 localStorage.setItem(cachedTeachersKey, JSON.stringify(teachers));
                 populateTeacherDropdown(teachers);
+
+                // 명시적으로 새로고침 버튼을 눌렀을 때만 팝업 표시 (캐시 없이 불러올 때)
+                if (forceFetch) {
+                    showAlert(`👨‍🏫 구글 시트에서 [${selectedTeam}] 최신 선생님 명단을 불러왔습니다.`);
+                }
             } catch (e) {
                 console.error("선생님 명단 불러오기 실패", e);
             }
@@ -872,9 +910,11 @@
                 loadingDiv.classList.add('hidden');
                 btn.style.display = 'flex';
 
-                if (!useFirebase) renderStudentList(state.currentStudents);
+                // 항상 렌더링 호출 (데이터 변경이 없더라도 화면은 갱신되어야 함)
+                renderStudentList(state.currentStudents);
 
-                // showAlert(`[${selectedTeam}] '${selectedTeacher}' 선생님 반\n학생 이름 읽기 완료!\n새로운 어르신 ${totalAdded}명이 추가되었습니다.`);
+                // 학생 이름 읽기 완료 팝업 (사용자 요청으로 제거)
+                // showAlert(`📋 [${selectedTeam}] '${selectedTeacher}' 선생님 반\n학생 명단을 구글 시트에서 불러왔습니다.\n(새로 추가된 어르신: ${totalAdded}명)`);
             }
         }
 
@@ -897,7 +937,7 @@
             // 오늘 기준으로 과거 30일(한달 전) 데이터만 허용
             const today = new Date();
             today.setHours(23, 59, 59, 999);
-            
+
             const pastDateLimit = new Date();
             pastDateLimit.setDate(today.getDate() - 30);
             pastDateLimit.setHours(0, 0, 0, 0);
@@ -910,7 +950,7 @@
                         let month = parseInt(match[1]) - 1;
                         let date = parseInt(match[2]);
                         let d = new Date(currentYear, month, date);
-                        
+
                         // 연말/연초(12월-1월) 미래/과거 데이터 년도 보정
                         if (today.getMonth() >= 10 && month <= 1) {
                             d.setFullYear(currentYear + 1);
