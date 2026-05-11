@@ -773,19 +773,20 @@
                 const percent = Math.round((completedCount / state.totalMissions) * 100);
 
                 const card = document.createElement('div');
-                // 다크 모드에 어울리는 카드 스타일
-                card.className = "bg-slate-800 p-3 sm:p-4 rounded-xl shadow-lg border border-slate-700 cursor-pointer hover:border-orange-500 hover:shadow-orange-500/10 transition-all flex flex-col justify-between items-center group relative min-h-[5rem] gap-2";
+                // 3D 입체 카드 스타일 적용
+                card.className = "relative bg-gradient-to-b from-slate-700 to-slate-800 p-3 sm:p-4 rounded-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_4px_0_#020617,0_6px_10px_rgba(0,0,0,0.4)] border border-slate-600/50 cursor-pointer hover:brightness-110 transition-all duration-150 active:translate-y-[4px] active:shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_0px_0_#020617,0_0px_0px_rgba(0,0,0,0)] flex flex-col justify-between items-center group min-h-[5rem] gap-2";
 
                 card.innerHTML = `
-                    <div class="w-full text-center truncate">
-                        <h4 class="text-lg sm:text-2xl font-bold text-slate-100 group-hover:text-orange-500 transition-colors truncate">${student.name} 님</h4>
+                    <div class="w-full text-center truncate relative z-10">
+                        <h4 class="text-lg sm:text-2xl font-extrabold text-slate-100 group-hover:text-white transition-colors truncate drop-shadow-sm">${student.name} 님</h4>
                     </div>
-                    <div class="flex items-center justify-center gap-2 w-full">
-                        <div class="w-10 h-10 rounded-full border-[3px] border-slate-700 flex items-center justify-center font-bold text-orange-500 bg-slate-900 text-xs shrink-0">
-                            ${percent}%
+                    <div class="flex items-center justify-center gap-2 w-full relative z-10">
+                        <div class="w-10 h-10 rounded-full shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] border border-slate-700 flex items-center justify-center font-bold text-orange-400 bg-slate-900 text-xs shrink-0 relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent w-full h-1/2"></div>
+                            <span class="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">${percent}%</span>
                         </div>
-                        <button type="button" class="delete-btn w-10 h-10 rounded-full bg-red-900/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center border border-red-900/30 shrink-0" title="삭제">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        <button type="button" class="delete-btn w-10 h-10 rounded-full bg-gradient-to-b from-red-900/40 to-red-900/60 text-red-400 hover:from-red-500 hover:to-red-600 hover:text-white transition-all duration-150 flex items-center justify-center border border-red-800/50 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_3px_0_#450a0a,0_4px_6px_rgba(0,0,0,0.3)] active:translate-y-[3px] active:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0px_0_#450a0a,0_0px_0px_rgba(0,0,0,0)] shrink-0" title="삭제">
+                            <svg class="drop-shadow-sm" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                     </div>
                 `;
@@ -1085,20 +1086,25 @@
                 const percent = Math.round((completedInCategory / totalInCategory) * 100);
 
                 const card = document.createElement('div');
-                card.className = "bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-lg border border-slate-700 cursor-pointer hover:bg-slate-700 hover:border-orange-500 transition-all duration-150 transform hover:-translate-y-1 active:scale-95 text-center flex flex-col justify-between h-full";
+                card.className = "relative bg-gradient-to-b from-slate-700 to-slate-800 p-4 sm:p-5 lg:p-6 rounded-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_6px_0_#020617,0_12px_20px_rgba(0,0,0,0.5)] border border-slate-600/50 cursor-pointer hover:brightness-110 transition-all duration-150 active:translate-y-[6px] active:shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0px_0_#020617,0_0px_0px_rgba(0,0,0,0)] text-center flex flex-col justify-between h-full group";
                 card.onclick = () => showCategoryMissions(category.id);
 
                 card.innerHTML = `
                     <div class="flex flex-col items-center justify-center flex-1">
-                        <div class="text-3xl sm:text-4xl mb-2 sm:mb-3 drop-shadow-md">${category.icon}</div>
-                        <h4 class="text-base sm:text-lg lg:text-xl font-bold text-yellow-400 mb-1 leading-tight">${category.title.split(':')[0]}</h4>
-                        <p class="text-base sm:text-lg lg:text-xl text-white mb-3 sm:mb-4 font-bold truncate w-full">${category.subtitle}</p>
-                    </div>
-                    <div class="w-full mt-auto">
-                        <div class="w-full bg-slate-900 rounded-full h-2 sm:h-3 mb-1.5 sm:mb-2 overflow-hidden border border-slate-700">
-                            <div class="bg-orange-500 h-2 sm:h-3 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" style="width: ${percent}%"></div>
+                        <div class="relative mb-3 sm:mb-4">
+                            <div class="absolute inset-0 bg-white/10 blur-xl rounded-full scale-150 group-hover:bg-white/20 transition-colors duration-300"></div>
+                            <div class="relative text-4xl sm:text-5xl drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-300">${category.icon}</div>
                         </div>
-                        <div class="text-[10px] sm:text-xs lg:text-sm font-bold text-slate-500">${completedInCategory} / ${totalInCategory} 달성</div>
+                        <h4 class="text-base sm:text-lg lg:text-xl font-extrabold text-yellow-400 mb-1 leading-tight drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">${category.title.split(':')[0]}</h4>
+                        <p class="text-base sm:text-lg lg:text-xl text-slate-100 mb-3 sm:mb-4 font-bold truncate w-full group-hover:text-white transition-colors drop-shadow-md">${category.subtitle}</p>
+                    </div>
+                    <div class="w-full mt-auto relative z-10">
+                        <div class="w-full bg-slate-900 rounded-full h-2.5 sm:h-3.5 mb-1.5 sm:mb-2 overflow-hidden border border-slate-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">
+                            <div class="bg-gradient-to-r from-orange-500 to-yellow-400 h-full rounded-full transition-all duration-500 relative" style="width: ${percent}%">
+                                <div class="absolute inset-0 bg-white/20 w-full h-1/2 rounded-t-full"></div>
+                            </div>
+                        </div>
+                        <div class="text-[10px] sm:text-xs lg:text-sm font-bold text-slate-400 group-hover:text-slate-300 transition-colors">${completedInCategory} / ${totalInCategory} 달성</div>
                     </div>
                 `;
                 grid.appendChild(card);
