@@ -13,7 +13,8 @@
         rel="stylesheet">
 
     <style>
-        html, body {
+        html,
+        body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #0f172a;
             color: #f1f5f9;
@@ -187,7 +188,8 @@
         <section id="view-teacher" class="view-section active">
             <div class="mb-6 sm:mb-8 bg-slate-800 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-700">
                 <h2 class="text-xl sm:text-2xl font-bold text-orange-500 mb-2">👨‍🏫 선생님 대시보드</h2>
-                <p class="text-base sm:text-lg text-slate-400 leading-relaxed">팀과 성함을 선택하시면 한 달 이내의 학생 명단을 불러옵니다. 선택 상태는
+                <p class="text-base sm:text-lg text-slate-400 leading-relaxed">팀과 선생님 성함을 선택하면 한 달 이내의 학생 명단을 불러옵니다. 선택
+                    상태는
                     자동으로 기억됩니다.</p>
             </div>
 
@@ -1529,13 +1531,13 @@
         window.onload = initApp;
         // 화면을 아래로 쓸어내려 새로고침되는 현상(Pull-to-refresh) 완벽 차단
         let ptrTouchStartY = 0;
-        document.addEventListener('touchstart', function(e) {
+        document.addEventListener('touchstart', function (e) {
             if (e.touches.length === 1) {
                 ptrTouchStartY = e.touches[0].clientY;
             }
         }, { passive: true });
 
-        document.addEventListener('touchmove', function(e) {
+        document.addEventListener('touchmove', function (e) {
             // 스크롤이 맨 위인 상태에서 화면을 아래로 당길 때만 기본 동작(새로고침) 차단
             if (window.scrollY <= 0 && e.touches[0].clientY > ptrTouchStartY) {
                 e.preventDefault();
