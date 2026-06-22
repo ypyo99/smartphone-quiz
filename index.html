@@ -7,7 +7,7 @@
     <title>앗싸! 신나는 스마트폰 명랑 운동회</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
         rel="stylesheet">
@@ -375,7 +375,7 @@
 
     <script type="module">
         // 앱 버전 및 데이터 캐시 키
-        const APP_VERSION = "2.0.0"; // 구글 시트 연동 버전
+        const APP_VERSION = "3.0.0"; // Supabase 연동 버전
         const CACHE_KEY_QUIZ = 'sm_gym_quiz_data';
         const CACHE_KEY_VER = 'sm_gym_quiz_version';
         const QUIZ_DATA_URL = 'https://docs.google.com/spreadsheets/d/1zXDFnGyWSEh1e6zLEOSRlyWyaAe_jwNHbbAu2ZF5tbE/export?format=csv&gid=0';
@@ -473,11 +473,10 @@
         let categoryChartInstance = null;
         let studentsUnsubscribe = null;
 
-        const sheetUrls = {
-            '1팀': 'https://docs.google.com/spreadsheets/d/1xnKOOPcsTDsrxcXydxxEg3KO4hPJFyYkKmg749rZcv8/export?format=csv&gid=684276747',
-            '2팀': 'https://docs.google.com/spreadsheets/d/1xnKOOPcsTDsrxcXydxxEg3KO4hPJFyYkKmg749rZcv8/export?format=csv&gid=908458461',
-            '3팀': 'https://docs.google.com/spreadsheets/d/1xnKOOPcsTDsrxcXydxxEg3KO4hPJFyYkKmg749rZcv8/export?format=csv&gid=55984324'
-        };
+        // ━━━ Supabase 클라이언트 초기화 ━━━
+        const SUPABASE_URL = 'https://oudrcfxkneopgtcfbwhd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91ZHJjZnhrbmVvcGd0Y2Zid2hkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNzk0MTYsImV4cCI6MjA5NDY1NTQxNn0.ovAp6X3VogCeyKa74pC3x2f4lKR6m3gkE0kEEhJbGpQ';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let modalTimeout = null;
 
@@ -567,7 +566,7 @@
             state.totalMissions = quizData.reduce((acc, cat) => acc + cat.missions.length, 0);
 
             document.getElementById('btn-teacher-dashboard').addEventListener('click', goToTeacherDashboard);
-            document.getElementById('btn-fetch-sheets').addEventListener('click', fetchStudentsFromSheets);
+            document.getElementById('btn-fetch-sheets').addEventListener('click', fetchStudentsFromSupabase);
             document.getElementById('sync-team-select').addEventListener('change', () => loadTeachersList(false));
             document.getElementById('sync-teacher-select').addEventListener('change', () => {
                 const selectedTeacher = document.getElementById('sync-teacher-select').value;
@@ -647,46 +646,60 @@
             localStorage.setItem('sm_gym_students_local', JSON.stringify(state.currentStudents));
         }
 
+        // ━━━ Supabase에서 선생님 목록 읽어오기 ━━━
         async function loadTeachersList(forceFetch = false) {
             const selectedTeam = document.getElementById('sync-team-select').value;
             const selectTeacher = document.getElementById('sync-teacher-select');
 
-            // 캐시된 선생님 데이터 확인
+            // 캐시된 선생님 데이터 확인 (강제 새로고침이 아니면 캐시 우선 사용)
             const cachedTeachersKey = `sm_gym_teachers_${selectedTeam}`;
             const cachedTeachers = localStorage.getItem(cachedTeachersKey);
 
-            if (cachedTeachers) {
+            if (cachedTeachers && !forceFetch) {
+                console.log(`[${selectedTeam}] 캐시된 선생님 명단 사용`);
                 populateTeacherDropdown(JSON.parse(cachedTeachers));
-                // 강제 업데이트가 아니고 캐시가 있으면 fetch 생략
-                if (!forceFetch) {
-                    console.log(`[${selectedTeam}] 캐시된 명단을 사용합니다.`);
-                    return;
-                }
-            } else {
-                selectTeacher.innerHTML = '<option value="">선생님 선택</option>';
+                return;
             }
 
-            if (!sheetUrls[selectedTeam]) return;
+            // 드롭다운 초기화
+            selectTeacher.innerHTML = '<option value="">선생님 불러오는 중...</option>';
 
             try {
-                console.log(`[${selectedTeam}] 최신 명단을 읽어오는 중...`);
-                const res = await fetch(`${sheetUrls[selectedTeam]}&t=${Date.now()}`);
-                if (!res.ok) throw new Error('네트워크 응답 오류');
-                const text = await res.text();
+                console.log(`[Supabase] ${selectedTeam} 선생님 목록 조회 중...`);
 
-                const teachers = extractTeachers(text);
+                // Supabase에서 해당 팀의 선생님 목록 조회 (중복 없이)
+                const { data, error } = await supabaseClient
+                    .from('daily_logs')
+                    .select('teacher')
+                    .eq('team', selectedTeam)
+                    .not('teacher', 'is', null)
+                    .neq('teacher', '');
+
+                if (error) throw error;
+
+                // 중복 제거하여 선생님 이름 목록 만들기
+                const teachersSet = new Set();
+                data.forEach(row => {
+                    if (row.teacher && row.teacher.trim() !== '') {
+                        teachersSet.add(row.teacher.trim());
+                    }
+                });
+                const teachers = Array.from(teachersSet).sort();
+
+                // 캐시에 저장
                 localStorage.setItem(cachedTeachersKey, JSON.stringify(teachers));
                 populateTeacherDropdown(teachers);
 
-                // 명시적으로 새로고침 버튼을 눌렀을 때만 팝업 표시 (캐시 없이 불러올 때)
                 if (forceFetch) {
-                    showAlert(`👨‍🏫 구글 시트에서 [${selectedTeam}] 최신 선생님 명단을 불러왔습니다.`);
+                    showAlert(`👨‍🏫 [${selectedTeam}] 최신 선생님 명단을 불러왔습니다. (${teachers.length}명)`);
                 }
             } catch (e) {
-                console.error("선생님 명단 불러오기 실패", e);
+                console.error('선생님 명단 불러오기 실패:', e);
+                selectTeacher.innerHTML = '<option value="">오류: 다시 시도해주세요</option>';
             }
         }
 
+        // 선생님 드롭다운에 목록 채우기
         function populateTeacherDropdown(teachersArray) {
             const selectTeacher = document.getElementById('sync-teacher-select');
             selectTeacher.innerHTML = '<option value="">선생님 선택</option>';
@@ -697,37 +710,11 @@
                 selectTeacher.appendChild(opt);
             });
 
-            // 캐시된 선택된 선생님 복구
+            // 마지막으로 선택했던 선생님 자동 복구
             const cachedTeacher = localStorage.getItem('sm_gym_last_teacher');
             if (cachedTeacher && teachersArray.includes(cachedTeacher)) {
                 selectTeacher.value = cachedTeacher;
             }
-        }
-
-        function extractTeachers(text) {
-            const results = Papa.parse(text, { header: false, skipEmptyLines: true });
-            const data = results.data;
-            let headerRowIndex = -1;
-
-            for (let i = 0; i < Math.min(10, data.length); i++) {
-                if (data[i] && data[i].length > 3 && data[i][3] && data[i][3].replace(/\s+/g, '') === "구분") {
-                    headerRowIndex = i; break;
-                }
-            }
-            if (headerRowIndex === -1) return [];
-
-            const namesList = []; // 순서 유지를 위해 Array 사용
-            for (let i = headerRowIndex + 1; i < data.length; i++) {
-                const row = data[i];
-                if (!row || row.length < 2) continue;
-                let teacherName = row[1] ? row[1].trim() : '';
-                if (teacherName !== '' && teacherName !== '강사명' && teacherName !== '-' && isNaN(teacherName)) {
-                    if (!namesList.includes(teacherName)) {
-                        namesList.push(teacherName);
-                    }
-                }
-            }
-            return namesList;
         }
 
         function loadStudents() {
@@ -809,12 +796,13 @@
             }
         }
 
-        async function fetchStudentsFromSheets() {
+        // ━━━ Supabase에서 학생 이름 읽어오기 ━━━
+        async function fetchStudentsFromSupabase() {
             const selectedTeam = document.getElementById('sync-team-select').value;
             const selectedTeacher = document.getElementById('sync-teacher-select').value;
 
             if (!selectedTeacher) {
-                showAlert("선생님을 먼저 선택해주세요."); return;
+                showAlert('선생님을 먼저 선택해주세요.'); return;
             }
 
             // 선택 기억
@@ -823,9 +811,11 @@
 
             const btn = document.getElementById('btn-fetch-sheets');
             const loadingDiv = document.getElementById('sheets-loading');
+            const loadingMsg = document.getElementById('loading-message');
 
             btn.style.display = 'none';
             loadingDiv.classList.remove('hidden');
+            if (loadingMsg) loadingMsg.textContent = 'Supabase에서 학생 명단을 읽고 있습니다...';
 
             // 브라우저 렌더링 양보
             await new Promise(resolve => setTimeout(resolve, 50));
@@ -833,31 +823,79 @@
             let totalAdded = 0;
 
             try {
-                const res = await fetch(`${sheetUrls[selectedTeam]}&t=${Date.now()}`);
-                if (!res.ok) throw new Error('네트워크 응답 오류');
-                const text = await res.text();
+                console.log(`[Supabase] ${selectedTeam} - ${selectedTeacher} 학생 목록 조회 중...`);
 
-                if (text.trim().toLowerCase().startsWith("<!doctype html")) {
-                    throw new Error("AUTH_ERROR");
-                }
+                // daily_logs에서 해당 팀+선생님의 모든 student, location 값 가져오기
+                const { data, error } = await supabaseClient
+                    .from('daily_logs')
+                    .select('student, location')
+                    .eq('team', selectedTeam)
+                    .eq('teacher', selectedTeacher)
+                    .not('student', 'is', null)
+                    .neq('student', '');
 
-                const names = extractStudents(text, selectedTeacher);
+                if (error) throw error;
 
-                const fetchedNamesSet = new Set(names.map(n => n.trim()));
+                // 학생 이름이 아닌 값 제외 (자체학습, 대상자발굴, 공휴일 등)
+                const BLACKLIST = [
+                    '자체학습', '대상자발굴', '수업준비', '복지관이동', '복지관으로이동',
+                    '이동시간', '보조강사', '학습', '대상자', '대상자없음', '오전수업',
+                    '컴1/보조', '컴기초1반', '컴활용/보조', '기초', '도선복지관', '경로당', '성원',
+                    '공휴일', '총평가회', '팀장간담회', '지방선거일'
+                ];
+
+                // 장소(location)에 이 키워드가 포함된 날은 통째로 제외
+                const HOLIDAY_LOCATIONS = ['공휴일', '지방선거일', '소양교육', '대체휴일', '대체공휴일', '연차', '휴가'];
+
+                // student 컬럼에 "김경애/이순희" 처럼 슬래시로 구분된 경우도 분리하여 처리
+                const namesSet = new Set();
+                data.forEach(row => {
+                    if (!row.student) return;
+
+                    // ① 장소(location)에 공휴일 관련 키워드가 있으면 이 행 전체 스킵
+                    if (row.location) {
+                        const loc = row.location.trim();
+                        if (HOLIDAY_LOCATIONS.some(kw => loc.includes(kw))) return;
+                    }
+
+                    // ② 슬래시(/)로 구분된 경우 분리
+                    const parts = row.student.split('/').map(n => n.trim()).filter(n => n.length > 0);
+                    parts.forEach(name => {
+                        const cleanName = name.replace(/\s+/g, ''); // 공백 제거
+                        // 블랙리스트 키워드 제외
+                        if (BLACKLIST.some(kw => cleanName.includes(kw))) return;
+                        // 날/절로 끝나는 공휴일 표현 제외
+                        if (cleanName.endsWith('날') || cleanName.endsWith('절')) return;
+                        // 숫자만 있는 값 제외
+                        if (!isNaN(cleanName)) return;
+                        // 이름이 2글자 이상인 경우만 추가
+                        if (cleanName.length >= 2) {
+                            namesSet.add(cleanName);
+                        }
+                    });
+                });
+
+                const fetchedNames = Array.from(namesSet);
+                console.log(`[Supabase] 추출된 학생 이름 (${fetchedNames.length}명):`, fetchedNames);
+
+                const fetchedNamesSet = new Set(fetchedNames);
                 const enrollPromises = [];
 
+                // 기존 학생 목록 업데이트 (선생님 연결/해제)
                 state.currentStudents.forEach(student => {
                     if (student.team === selectedTeam) {
                         let updated = false;
                         if (!student.teachers) student.teachers = [];
 
                         if (fetchedNamesSet.has(student.name)) {
+                            // 이미 DB에 있는 학생 → 해당 선생님 연결 추가
                             if (!student.teachers.includes(selectedTeacher)) {
                                 student.teachers.push(selectedTeacher);
                                 updated = true;
                             }
-                            fetchedNamesSet.delete(student.name);
+                            fetchedNamesSet.delete(student.name); // 처리 완료 표시
                         } else {
+                            // Supabase에 없는 학생 → 해당 선생님 연결 해제
                             const tIdx = student.teachers.indexOf(selectedTeacher);
                             if (tIdx > -1) {
                                 student.teachers.splice(tIdx, 1);
@@ -875,6 +913,7 @@
                     }
                 });
 
+                // 새로운 학생 추가
                 fetchedNamesSet.forEach(cleanName => {
                     const studentId = 'student_' + Date.now() + Math.floor(Math.random() * 1000000);
                     const newStudent = {
@@ -886,7 +925,6 @@
                         createdAt: Date.now(),
                         updatedAt: Date.now()
                     };
-
                     state.currentStudents.push(newStudent);
                     totalAdded++;
 
@@ -896,137 +934,22 @@
                     }
                 });
 
-                if (!useFirebase) {
-                    saveStudentsLocal();
-                }
+                if (!useFirebase) saveStudentsLocal();
 
                 if (useFirebase && enrollPromises.length > 0) {
                     await Promise.all(enrollPromises);
                 }
 
+                showAlert(`📋 [${selectedTeam}] '${selectedTeacher}' 선생님 반\n학생 ${fetchedNames.length}명을 불러왔습니다. (새로 추가: ${totalAdded}명)`);
+
             } catch (e) {
-                console.error("명단 불러오기 실패", e);
-                if (e.message === "AUTH_ERROR") {
-                    showAlert(`⚠️ 구글 시트 접근 권한이 차단되었습니다.\n'링크가 있는 모든 사용자'로 공유 설정해주세요.`);
-                } else {
-                    showAlert("네트워크 오류로 명단을 가져오지 못했습니다.");
-                }
+                console.error('Supabase 학생 명단 불러오기 실패:', e);
+                showAlert('⚠️ 학생 명단을 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.');
             } finally {
                 loadingDiv.classList.add('hidden');
                 btn.style.display = 'flex';
-
-                // 항상 렌더링 호출 (데이터 변경이 없더라도 화면은 갱신되어야 함)
                 renderStudentList(state.currentStudents);
-
-                // 학생 이름 읽기 완료 팝업 (사용자 요청으로 제거)
-                // showAlert(`📋 [${selectedTeam}] '${selectedTeacher}' 선생님 반\n학생 명단을 구글 시트에서 불러왔습니다.\n(새로 추가된 어르신: ${totalAdded}명)`);
             }
-        }
-
-
-        function extractStudents(text, filterTeacher) {
-            const results = Papa.parse(text, { header: false, skipEmptyLines: true });
-            const data = results.data;
-            let headerRowIndex = -1;
-
-            for (let i = 0; i < Math.min(10, data.length); i++) {
-                if (data[i] && data[i].length > 3 && data[i][3] && data[i][3].replace(/\s+/g, '') === "구분") {
-                    headerRowIndex = i; break;
-                }
-            }
-            if (headerRowIndex === -1) return [];
-
-            const headerRow = data[headerRowIndex];
-            const validColIndices = [];
-
-            // 오늘 기준으로 과거 30일(한달 전) 데이터만 허용
-            const today = new Date();
-            today.setHours(23, 59, 59, 999);
-
-            const pastDateLimit = new Date();
-            pastDateLimit.setDate(today.getDate() - 30);
-            pastDateLimit.setHours(0, 0, 0, 0);
-
-            for (let j = 4; j < headerRow.length; j++) {
-                if (headerRow[j] && headerRow[j].trim() !== '') {
-                    const match = headerRow[j].trim().match(/(\d+)\s*[/.]\s*(\d+)/);
-                    if (match) {
-                        let currentYear = today.getFullYear();
-                        let month = parseInt(match[1]) - 1;
-                        let date = parseInt(match[2]);
-                        let d = new Date(currentYear, month, date);
-
-                        // 연말/연초(12월-1월) 미래/과거 데이터 년도 보정
-                        if (today.getMonth() >= 10 && month <= 1) {
-                            d.setFullYear(currentYear + 1);
-                        } else if (today.getMonth() <= 1 && month >= 10) {
-                            d.setFullYear(currentYear - 1);
-                        }
-
-                        if (d >= pastDateLimit && d <= today) {
-                            validColIndices.push(j);
-                        }
-                    }
-                }
-            }
-
-            const namesSet = new Set();
-            const teacherGroups = new Map();
-            let currentTeacherName = "";
-
-            for (let i = headerRowIndex + 1; i < data.length; i++) {
-                const row = data[i];
-                if (!row || row.length < 2) continue;
-                if (row[1] && row[1].trim() !== '') {
-                    // 강사 이름에서 모든 공백을 제거하여 저장
-                    currentTeacherName = row[1].replace(/\s+/g, '');
-                }
-                if (currentTeacherName) {
-                    if (!teacherGroups.has(currentTeacherName)) teacherGroups.set(currentTeacherName, []);
-                    teacherGroups.get(currentTeacherName).push(row);
-                }
-            }
-
-            teacherGroups.forEach((rows, teacherName) => {
-                let cleanFilterTeacher = filterTeacher ? filterTeacher.replace(/\s+/g, '') : '';
-                // '최성자/이화수' 같이 두 명이 들어간 경우도 있으므로 includes로 체크
-                if (cleanFilterTeacher && !teacherName.includes(cleanFilterTeacher)) return;
-
-                for (let i = 0; i < rows.length; i++) {
-                    const row = rows[i];
-                    const cat = (row.length > 3 && row[3]) ? row[3].replace(/\s+/g, '') : '';
-                    if (cat === "대상" || cat === "대상자") {
-                        let locationRow = null;
-                        if (i + 1 < rows.length) {
-                            const nextCat = (rows[i + 1].length > 3 && rows[i + 1][3]) ? rows[i + 1][3].replace(/\s+/g, '') : '';
-                            if (nextCat === "장소") locationRow = rows[i + 1];
-                        }
-
-                        validColIndices.forEach(colIdx => {
-                            if (locationRow && locationRow.length > colIdx && locationRow[colIdx]) {
-                                const locVal = locationRow[colIdx].trim();
-                                if (['공휴일', '소양교육', '대체휴일', '대체공휴일', '연차', '휴가'].some(kw => locVal.includes(kw))) return;
-                            }
-
-                            const targetVal = (row.length > colIdx && row[colIdx]) ? row[colIdx].trim() : "";
-                            if (!targetVal || targetVal === '-' || targetVal.includes('대상자 없음')) return;
-
-                            let cleanTarget = targetVal.replace(/대상자\s*없음/g, '-').replace(/대상자\s*발굴/g, '대상자발굴');
-                            const names = cleanTarget.split(/[/, \n()]+/).map(n => n.trim()).filter(n => n.length > 0 && n !== '-');
-
-                            names.forEach((name) => {
-                                let cleanName = name.replace(/\s+/g, '');
-                                if (['대상자발굴', '수업준비', '복지관이동', '복지관으로이동', '이동시간', '자체학습', '보조강사', '학습', '대상자', '대상자없음', '오전수업', '컴1/보조', '컴기초1반', '컴활용/보조', '기초', '도선복지관', '경로당', '성원'].some(kw => cleanName.includes(kw)) || cleanName.endsWith('날') || cleanName.endsWith('절')) return;
-
-                                if (cleanName.length >= 2 && isNaN(cleanName)) {
-                                    namesSet.add(cleanName);
-                                }
-                            });
-                        });
-                    }
-                }
-            });
-            return Array.from(namesSet);
         }
 
         async function deleteStudent(studentId, studentName) {
