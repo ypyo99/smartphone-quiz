@@ -225,10 +225,6 @@
                         </button>
                     </div>
 
-                    <button id="btn-fetch-sheets"
-                        class="h-12 bg-orange-600 hover:bg-orange-500 text-white px-4 rounded-xl font-bold transition-colors whitespace-nowrap w-full flex items-center justify-center gap-2 text-base shadow-lg">
-                        <span class="text-lg">🔄</span> 학생 이름 읽기
-                    </button>
                 </div>
 
                 <div id="sheets-loading"
@@ -568,7 +564,6 @@
             state.totalMissions = quizData.reduce((acc, cat) => acc + cat.missions.length, 0);
 
             document.getElementById('btn-teacher-dashboard').addEventListener('click', goToTeacherDashboard);
-            document.getElementById('btn-fetch-sheets').addEventListener('click', fetchStudentsFromSupabase);
             document.getElementById('sync-team-select').addEventListener('change', () => loadTeachersList(false));
             document.getElementById('sync-teacher-select').addEventListener('change', () => {
                 const selectedTeacher = document.getElementById('sync-teacher-select').value;
@@ -816,11 +811,9 @@
             localStorage.setItem('sm_gym_last_team', selectedTeam);
             localStorage.setItem('sm_gym_last_teacher', selectedTeacher);
 
-            const btn = document.getElementById('btn-fetch-sheets');
             const loadingDiv = document.getElementById('sheets-loading');
             const loadingMsg = document.getElementById('loading-message');
 
-            btn.style.display = 'none';
             loadingDiv.classList.remove('hidden');
             if (loadingMsg) loadingMsg.textContent = 'Supabase에서 학생 명단을 읽고 있습니다...';
 
@@ -954,7 +947,6 @@
                 showAlert('⚠️ 학생 명단을 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.');
             } finally {
                 loadingDiv.classList.add('hidden');
-                btn.style.display = 'flex';
                 renderStudentList(state.currentStudents);
             }
         }
