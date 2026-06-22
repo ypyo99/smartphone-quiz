@@ -668,24 +668,25 @@
             try {
                 console.log(`[Supabase] ${selectedTeam} 선생님 목록 조회 중...`);
 
-                // Supabase에서 해당 팀의 선생님 목록 조회 (중복 없이)
+                // Supabase에서 해당 팀의 선생님 목록 조회 (seq_num 순으로 정렬)
                 const { data, error } = await supabaseClient
-                    .from('daily_logs')
-                    .select('teacher')
+                    .from('teachers')
+                    .select('name')
                     .eq('team', selectedTeam)
-                    .not('teacher', 'is', null)
-                    .neq('teacher', '');
+                    .order('seq_num', { ascending: true })
+                    .not('name', 'is', null)
+                    .neq('name', '');
 
                 if (error) throw error;
 
-                // 중복 제거하여 선생님 이름 목록 만들기
+                // 중복 제거 및 순서 유지 (DB의 seq_num 순서를 그대로 유지하기 위해 sort() 제거)
                 const teachersSet = new Set();
                 data.forEach(row => {
-                    if (row.teacher && row.teacher.trim() !== '') {
-                        teachersSet.add(row.teacher.trim());
+                    if (row.name && row.name.trim() !== '') {
+                        teachersSet.add(row.name.trim());
                     }
                 });
-                const teachers = Array.from(teachersSet).sort();
+                const teachers = Array.from(teachersSet);
 
                 // 캐시에 저장
                 localStorage.setItem(cachedTeachersKey, JSON.stringify(teachers));
