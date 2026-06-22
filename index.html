@@ -574,7 +574,8 @@
                 const selectedTeacher = document.getElementById('sync-teacher-select').value;
                 if (selectedTeacher) {
                     localStorage.setItem('sm_gym_last_teacher', selectedTeacher);
-                    renderStudentList(state.currentStudents);
+                    // 선생님을 선택하면 자동으로 DB에서 학생 명단 다시 읽어오기
+                    fetchStudentsFromSupabase();
                 }
             });
             document.getElementById('btn-refresh-teachers').addEventListener('click', () => {
