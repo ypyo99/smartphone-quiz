@@ -759,7 +759,10 @@
 
             filteredStudents.forEach(student => {
                 const completedCount = student.completed ? student.completed.length : 0;
-                const percent = Math.round((completedCount / state.totalMissions) * 100);
+                // state.totalMissions가 0이면 NaN이 되므로 방어 처리
+                const percent = state.totalMissions > 0
+                    ? Math.round((completedCount / state.totalMissions) * 100)
+                    : 0;
 
                 const card = document.createElement('div');
                 // 3D 입체 카드 스타일 적용
